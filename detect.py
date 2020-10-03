@@ -11,14 +11,21 @@ from utils.torch_utils import select_device, time_synchronized
 
 class Yolo5:
     def __init__(self):
-        self.opt = {}
+        self.opt = {
+            'img_size': 480,
+            'conf_thresh': 0.4,
+            'iou_thresh': 0.5,
+            'agnostic_nms': True,
+            'output': 'inference/output'
+        }
         self.model = None
         self.device = None
         self.names = []
         self.colors = []
 
     def init_opt(self, opt):
-        self.opt = opt
+        for k, v in opt.items():
+            self.opt[k] = v
         # Initialize
         set_logging()
         self.device = select_device(self.opt['device'])
@@ -61,7 +68,7 @@ class Yolo5:
         print('Time:', t2 - t1)
 
         # Apply NMS
-        pred = non_max_suppression(pred, self.opt['conf_thres'], self.opt['iou_thres'],
+        pred = non_max_suppression(pred, self.opt['conf_thresh'], self.opt['iou_thresh'],
                                    classes=self.opt['classes'], agnostic=self.opt['agnostic_nms'])
 
         # Process detections
@@ -73,7 +80,9 @@ class Yolo5:
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    xyxy = [xy.item() for xy in xyxy]  # tensor列表转为一般列表
+                    xywh = [xyxy[0] / img_w, xyxy[1] / img_h,
+                            (xyxy[2] - xyxy[0]) / img_w, (xyxy[3] - xyxy[1]) / img_h]  # 转相对于宽高的坐标
                     objects.append({'class': self.names[int(cls)], 'color': self.colors[int(cls)],
                                     'confidence': conf.item(), 'x': xywh[0], 'y': xywh[1], 'w': xywh[2], 'h': xywh[3]})
         return objects

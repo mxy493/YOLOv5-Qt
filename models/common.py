@@ -3,6 +3,7 @@ import math
 
 import torch
 import torch.nn as nn
+from utils.general import non_max_suppression
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -23,7 +24,7 @@ class Conv(nn.Module):
         super(Conv, self).__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
         self.bn = nn.BatchNorm2d(c2)
-        self.act = nn.LeakyReLU(0.1, inplace=True) if act else nn.Identity()
+        self.act = nn.Hardswish() if act else nn.Identity()
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
@@ -96,6 +97,19 @@ class Concat(nn.Module):
 
     def forward(self, x):
         return torch.cat(x, self.d)
+
+
+class NMS(nn.Module):
+    # Non-Maximum Suppression (NMS) module
+    conf = 0.3  # confidence threshold
+    iou = 0.6  # IoU threshold
+    classes = None  # (optional list) filter by class
+
+    def __init__(self, dimension=1):
+        super(NMS, self).__init__()
+
+    def forward(self, x):
+        return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)
 
 
 class Flatten(nn.Module):

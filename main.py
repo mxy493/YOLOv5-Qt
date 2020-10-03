@@ -3,23 +3,25 @@ import sys
 import threading
 import time
 import cv2
-from PyQt5.QtCore import QTimer, QRect, Qt
-from PyQt5.QtGui import *
-from PyQt5.QtGui import QImage
-from PyQt5.QtWidgets import *
+from PySide2.QtCore import QTimer, QRect
+from PySide2.QtGui import (QPainter, QBrush, QColor, QImage, QPixmap, Qt, QFont,
+                           QPen)
+from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout,
+                               QHBoxLayout, QWidget, QGroupBox, QLabel,
+                               QLineEdit, QApplication, QFileDialog, QCheckBox, QComboBox)
 
 import msg_box
-from global_data import GLOBAL
+from gb import GLOBAL
 from detect import Yolo5
 
 
-def threading_runner(func):
+def thread_runner(func):
     """多线程"""
 
-    def wrapped():
-        threading.Thread(target=func).start()
+    def wrapper(*args, **kwargs):
+        threading.Thread(target=func, args=args, kwargs=kwargs).start()
 
-    return wrapped
+    return wrapper
 
 
 def init_config():
@@ -33,25 +35,25 @@ def init_config():
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('目标检测')
+        self.setWindowTitle('YOLOv5目标检测')
         self.setMinimumSize(1200, 800)
 
         init_config()
 
-        self.camera = CameraWidget()  # 摄像头
-        self.yolo_config = YoloConfig()  # Yolo配置界面
+        self.camera = WidgetCamera()  # 摄像头
+        self.config = WidgetConfig()  # Yolo配置界面
 
-        self.btn_camera = QPushButton('开启/关闭')  # 开启或关闭摄像头
+        self.btn_camera = QPushButton('开启/关闭摄像头')  # 开启或关闭摄像头
         self.btn_camera.setFixedHeight(60)
         vbox1 = QVBoxLayout()
-        vbox1.addWidget(self.yolo_config)
+        vbox1.addWidget(self.config)
         vbox1.addStretch()
         vbox1.addWidget(self.btn_camera)
 
         self.btn_camera.clicked.connect(self.oc_camera)
 
         hbox = QHBoxLayout()
-        hbox.addWidget(self.camera, 4)
+        hbox.addWidget(self.camera, 3)
         hbox.addLayout(vbox1, 1)
 
         vbox = QVBoxLayout()
@@ -67,10 +69,31 @@ class MainWindow(QMainWindow):
         if self.camera.cap.isOpened():
             self.camera.close_camera()
         else:
+            if self.config.check.isChecked():
+                self.camera.cam = 0
+            else:
+                self.camera.cam = self.config.line_video.text()
+            self.camera.open_camera()
             self.camera.show_camera()
 
-    # def start(self):
-    #     self.camera.show_camera()
+            # 目标检测
+            self.camera.start_detect(self.get_yolo_config())
+
+    def get_yolo_config(self):
+        # 设置视频
+        opt = {
+            'weights': self.config.line_weights.text(),
+            'output': 'inference/output',
+            'img_size': self.config.combo_size.currentData(),
+            'conf_thresh': 0.4,
+            'iou_thresh': 0.5,
+            'device': '',
+            'view_img': True,
+            'classes': '',
+            'agnostic_nms': True,
+            'augment': True,
+        }
+        return opt
 
     def resizeEvent(self, event):
         self.update()
@@ -80,9 +103,9 @@ class MainWindow(QMainWindow):
             self.camera.close_camera()
 
 
-class CameraWidget(QWidget):
+class WidgetCamera(QWidget):
     def __init__(self):
-        super(CameraWidget, self).__init__()
+        super(WidgetCamera, self).__init__()
 
         self.yolo = Yolo5()
         self.can_yolo = False  # yolo是否配置正确
@@ -91,7 +114,7 @@ class CameraWidget(QWidget):
 
         self.opened = False  # 摄像头已打开
         self.cap = cv2.VideoCapture()
-        self.CAM_NUM = 0
+        self.cam = 0  # 摄像头序号或视频文件，0为默认摄像头
         self.timer_camera = QTimer()
 
         self.pix_image = None  # QPixmap视频帧
@@ -101,61 +124,31 @@ class CameraWidget(QWidget):
 
         self.fps = 0  # 帧率
 
-    def show_camera(self):
-        @threading_runner
-        def start_read():
-            while self.opened:
-                self.read_image()
-                time.sleep(0.034)  # 每34毫秒(对应30帧的视频)执行一次show_camera方法
-                self.update()
-
-        @threading_runner
-        def start_detect():
-            time0 = time.time()
-            while self.opened:
-                if self.image is None:
-                    continue
-                # 检测
-                self.objects = self.yolo.obj_detect(self.image)
-                time1 = time.time()
-                tt = time1 - time0
-                self.fps = 1 / tt
-                self.update()
-                time0 = time1
-
-        # 初始化yolo参数
-        opt = {
-            'weights': GLOBAL.config['weights'],
-            'output': 'inference/output',
-            'img_size': 416,
-            'conf_thres': 0.4,
-            'iou_thres': 0.5,
-            'device': '',
-            'view_img': True,
-            'classes': '',
-            'agnostic_nms': True,
-            'augment': True,
-            'update': True
-        }
-        if not self.yolo.init_opt(opt):
-            self.can_yolo = False
-            msg = msg_box.MsgWarning()
-            msg.setText('YOLO配置异常！')
-            msg.exec()  # 此处会阻塞
-        else:
-            self.can_yolo = True
-        # flag = self.cap.open(self.CAM_NUM)  # 打开摄像头，比较耗时
-        flag = self.cap.open('car1.avi')  # 打开一个视频
-        self.opened = True  # 已打开
+    def open_camera(self):
+        """打开摄像头，成功打开返回True"""
+        flag = self.cap.open(self.cam)  # 打开一个视频
         if flag:
-            start_read()  # 启动读帧线程
-            if self.can_yolo:
-                start_detect()  # 启动目标检测线程
+            self.opened = True  # 已打开
+            return True
         else:
             msg = msg_box.MsgWarning()
             msg.setText('视频流开启失败！\n'
                         '请确保摄像头已打开或视频文件真实存在！')
-            msg.exec()  # 此处会阻塞
+            msg.exec()
+            return False
+
+    def close_camera(self):
+        self.timer_camera.stop()
+        self.cap.release()
+        self.opened = False  # 已关闭
+        self.can_yolo = False
+
+    @thread_runner
+    def show_camera(self):
+        while self.opened:
+            self.read_image()
+            time.sleep(0.033)  # 每33毫秒(对应30帧的视频)执行一次show_camera方法
+            self.update()
 
     def read_image(self):
         retval, image = self.cap.read()
@@ -165,11 +158,29 @@ class CameraWidget(QWidget):
                 image = image[:, :, :-1]
             self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # image
 
-    def close_camera(self):
-        self.timer_camera.stop()
-        self.cap.release()
-        self.opened = False  # 已关闭
-        self.can_yolo = False
+    @thread_runner
+    def start_detect(self, opt):
+        if not self.yolo.init_opt(opt):
+            self.can_yolo = False
+            msg = msg_box.MsgWarning()
+            msg.setText('YOLO配置异常！')
+            msg.exec()  # 此处会阻塞
+            return
+        else:
+            self.can_yolo = True
+        self.yolo.init_opt(opt)
+        # 初始化yolo参数
+        time0 = time.time()
+        while self.opened:
+            if self.image is None:
+                continue
+            # 检测
+            self.objects = self.yolo.obj_detect(self.image)
+            time1 = time.time()
+            tt = time1 - time0
+            self.fps = 1 / tt
+            self.update()
+            time0 = time1
 
     def resizeEvent(self, event):
         self.update()
@@ -210,7 +221,7 @@ class CameraWidget(QWidget):
             pen = QPen()
             pen.setColor(Qt.white)
             qp.setPen(pen)
-            qp.drawText(self.width() - 100, yh + 30, 'FPS: ' + str(round(self.fps, 2)))
+            qp.drawText(self.width() - 150, yh + 40, 'FPS: ' + str(round(self.fps, 2)))
 
         # 画目标框
         pen = QPen()
@@ -232,15 +243,32 @@ class CameraWidget(QWidget):
             qp.drawText(tx, ty - 5, str(obj['class']) + str(round(obj['confidence'], 2)))
 
 
-class YoloConfig(QGroupBox):
+class WidgetConfig(QGroupBox):
     def __init__(self):
-        super(YoloConfig, self).__init__()
+        super(WidgetConfig, self).__init__()
 
+        # 使用默认摄像头复选框
+        self.check = QCheckBox('使用默认摄像头')
+        self.check.setChecked(True)
+        self.check.stateChanged.connect(self.check_state_changed)
+
+        # 选择视频文件
+        label_video = QLabel('视频文件')
+        self.line_video = QLineEdit()
+        self.line_video.setEnabled(False)
+        self.btn_video = QPushButton('选择文件')
+        self.btn_video.setEnabled(False)
+        self.btn_video.clicked.connect(self.choose_video_file)
+        hboxa = QHBoxLayout()
+        hboxa.addWidget(label_video)
+        hboxa.addWidget(self.line_video)
+        hboxa.addWidget(self.btn_video)
+
+        # 选择权重文件
         label_weight = QLabel('Weights')
-        label_weight.setMinimumWidth(50)
         self.line_weights = QLineEdit()
-        self.line_weights.setMinimumWidth(200)
-        self.line_weights.editingFinished.connect(lambda: GLOBAL.record_config('weights', self.line_weights.text()))
+        self.line_weights.editingFinished.connect(
+            lambda: GLOBAL.record_config('weights', self.line_weights.text()))
         self.btn_weight = QPushButton('选择文件')
         self.btn_weight.clicked.connect(self.choose_weights_file)
 
@@ -249,19 +277,23 @@ class YoloConfig(QGroupBox):
         hbox1.addWidget(self.line_weights)
         hbox1.addWidget(self.btn_weight)
 
+        # 设置图像大小
         label_size = QLabel('Size')
-        label_size.setMinimumWidth(50)
-        self.line_size = QLineEdit()
-        self.line_size.setMinimumWidth(200)
-        self.line_size.editingFinished.connect(lambda: GLOBAL.record_config('size', self.line_sizes.text()))
-        self.btn_size = QPushButton('选择文件')
+        self.combo_size = QComboBox()
+        self.combo_size.addItem('320', 320)
+        self.combo_size.addItem('416', 416)
+        self.combo_size.addItem('480', 480)
+        self.combo_size.addItem('544', 544)
+        self.combo_size.addItem('640', 640)
+        self.combo_size.setCurrentIndex(2)
 
         hbox2 = QHBoxLayout()
         hbox2.addWidget(label_size)
-        hbox2.addWidget(self.line_size)
-        hbox2.addWidget(self.btn_size)
+        hbox2.addWidget(self.combo_size)
 
         vbox = QVBoxLayout()
+        vbox.addWidget(self.check)
+        vbox.addLayout(hboxa)
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
 
@@ -275,12 +307,27 @@ class YoloConfig(QGroupBox):
         except KeyError as err_key:
             print('参数项不存在: ' + str(err_key))
 
+    def check_state_changed(self):
+        if self.check.isChecked():
+            self.line_video.setEnabled(False)
+            self.btn_video.setEnabled(False)
+        else:
+            self.line_video.setEnabled(True)
+            self.btn_video.setEnabled(True)
+
     def choose_weights_file(self):
-        """从系统中选择升级文件"""
+        """从系统中选择权重文件"""
         file = QFileDialog.getOpenFileName(self, "Pre-trained YOLO weights", "./",
                                            "Weights Files (*.pt);;All Files (*)")
         self.line_weights.setText(file[0])
         GLOBAL.record_config('weights', file[0])
+
+    def choose_video_file(self):
+        """从系统中选择视频文件"""
+        file = QFileDialog.getOpenFileName(self, "Pre-trained YOLO weights", "./",
+                                           "Video Files (*)")
+        self.line_video.setText(file[0])
+        GLOBAL.record_config('video', file[0])
 
 
 def main():

@@ -1,6 +1,6 @@
 # coding=utf-8
-from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtWidgets import QMessageBox
+from PySide2.QtGui import QIcon, QPixmap
+from PySide2.QtWidgets import QMessageBox
 
 
 class MsgSuccess(QMessageBox):

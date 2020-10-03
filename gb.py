@@ -5,7 +5,7 @@ import os
 import msg_box
 
 
-class GlobalData:
+class Global:
     def __init__(self):
         self.config = {}
 
@@ -26,4 +26,4 @@ class GlobalData:
             msg.exec()
 
 
-GLOBAL = GlobalData()  # 全局变量调用该对象
+GLOBAL = Global()  # 全局变量调用该对象

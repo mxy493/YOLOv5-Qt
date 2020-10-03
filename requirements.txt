@@ -20,4 +20,4 @@ tqdm>=4.41.0
 # conda install -yc pytorch pytorch torchvision
 # conda install -yc conda-forge protobuf numpy && pip install onnx==1.6.0  # https://github.com/onnx/onnx#linux-and-macos
 
-PyQt5~=5.15.0
+PySide2~=5.15.1
