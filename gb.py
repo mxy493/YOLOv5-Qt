@@ -7,7 +7,7 @@ import msg_box
 
 class Global:
     def __init__(self):
-        self.config = {}
+        self.config = dict()
 
     def record_config(self, key, value):
         """将设置参数写入到本地文件保存，传入键值对"""
@@ -18,7 +18,7 @@ class Global:
         try:
             # 写入文件
             with open('config/config.json', 'w') as file_config:
-                file_config.write(json.dumps(self.config))
+                file_config.write(json.dumps(self.config, indent=4))
         except FileNotFoundError as err_file:
             print(err_file)
             msg = msg_box.MsgWarning()

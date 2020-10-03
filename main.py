@@ -77,12 +77,15 @@ class MainWindow(QMainWindow):
             self.camera.show_camera()
 
             # 目标检测
-            self.camera.start_detect(self.get_yolo_config())
+            opt = self.get_yolo_config()
+            self.camera.start_detect(opt)
+
+            self.save_config()  # 保存配置
 
     def get_yolo_config(self):
         # 设置视频
         opt = {
-            'weights': self.config.line_weights.text(),
+            'weights': self.config.line_weight.text(),
             'output': 'inference/output',
             'img_size': self.config.combo_size.currentData(),
             'conf_thresh': 0.4,
@@ -94,6 +97,11 @@ class MainWindow(QMainWindow):
             'augment': True,
         }
         return opt
+
+    def save_config(self):
+        GLOBAL.record_config('video', self.config.line_video.text())
+        GLOBAL.record_config('weight', self.config.line_weight.text())
+        GLOBAL.record_config('size', self.config.combo_size.currentData())
 
     def resizeEvent(self, event):
         self.update()
@@ -266,15 +274,15 @@ class WidgetConfig(QGroupBox):
 
         # 选择权重文件
         label_weight = QLabel('Weights')
-        self.line_weights = QLineEdit()
-        self.line_weights.editingFinished.connect(
-            lambda: GLOBAL.record_config('weights', self.line_weights.text()))
+        self.line_weight = QLineEdit()
+        self.line_weight.editingFinished.connect(
+            lambda: GLOBAL.record_config('weights', self.line_weight.text()))
         self.btn_weight = QPushButton('选择文件')
         self.btn_weight.clicked.connect(self.choose_weights_file)
 
         hbox1 = QHBoxLayout()
         hbox1.addWidget(label_weight)
-        hbox1.addWidget(self.line_weights)
+        hbox1.addWidget(self.line_weight)
         hbox1.addWidget(self.btn_weight)
 
         # 设置图像大小
@@ -303,7 +311,10 @@ class WidgetConfig(QGroupBox):
 
     def init_config(self):
         try:
-            self.line_weights.setText(GLOBAL.config['weights'])
+            self.line_video.setText(GLOBAL.config['video'])
+            self.line_weight.setText(GLOBAL.config['weight'])
+            self.combo_size.setCurrentIndex(
+                self.combo_size.findData(GLOBAL.config['size']))
         except KeyError as err_key:
             print('参数项不存在: ' + str(err_key))
 
@@ -319,7 +330,7 @@ class WidgetConfig(QGroupBox):
         """从系统中选择权重文件"""
         file = QFileDialog.getOpenFileName(self, "Pre-trained YOLO weights", "./",
                                            "Weights Files (*.pt);;All Files (*)")
-        self.line_weights.setText(file[0])
+        self.line_weight.setText(file[0])
         GLOBAL.record_config('weights', file[0])
 
     def choose_video_file(self):
