@@ -3,12 +3,13 @@ import sys
 import threading
 import time
 import cv2
-from PySide2.QtCore import QTimer, QRect
+from PySide2.QtCore import QTimer, QRect, QSize
 from PySide2.QtGui import (QPainter, QBrush, QColor, QImage, QPixmap, Qt, QFont,
                            QPen)
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout,
                                QHBoxLayout, QWidget, QGroupBox, QLabel,
-                               QLineEdit, QApplication, QFileDialog, QCheckBox, QComboBox)
+                               QLineEdit, QApplication, QFileDialog, QCheckBox, QComboBox,
+                               QGridLayout, QListView, QDoubleSpinBox)
 
 import msg_box
 from gb import GLOBAL
@@ -35,7 +36,7 @@ def init_config():
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('YOLOv5目标检测')
+        self.setWindowTitle('YOLOv5 Object Detection')
         self.setMinimumSize(1200, 800)
 
         init_config()
@@ -80,16 +81,14 @@ class MainWindow(QMainWindow):
             opt = self.get_yolo_config()
             self.camera.start_detect(opt)
 
-            self.save_config()  # 保存配置
-
     def get_yolo_config(self):
         # 设置视频
         opt = {
-            'weights': self.config.line_weight.text(),
+            'weights': self.config.line_weights.text(),
             'output': 'inference/output',
             'img_size': self.config.combo_size.currentData(),
-            'conf_thresh': 0.4,
-            'iou_thresh': 0.5,
+            'conf_thresh': self.config.spin_conf.value(),
+            'iou_thresh': self.config.spin_iou.value(),
             'device': '',
             'view_img': True,
             'classes': '',
@@ -97,11 +96,6 @@ class MainWindow(QMainWindow):
             'augment': True,
         }
         return opt
-
-    def save_config(self):
-        GLOBAL.record_config('video', self.config.line_video.text())
-        GLOBAL.record_config('weight', self.config.line_weight.text())
-        GLOBAL.record_config('size', self.config.combo_size.currentData())
 
     def resizeEvent(self, event):
         self.update()
@@ -116,9 +110,6 @@ class WidgetCamera(QWidget):
         super(WidgetCamera, self).__init__()
 
         self.yolo = Yolo5()
-        self.can_yolo = False  # yolo是否配置正确
-
-        self.setStyleSheet('background-color: #cecece')
 
         self.opened = False  # 摄像头已打开
         self.cap = cv2.VideoCapture()
@@ -146,10 +137,9 @@ class WidgetCamera(QWidget):
             return False
 
     def close_camera(self):
+        self.opened = False  # 先关闭目标检测线程再关闭摄像头
         self.timer_camera.stop()
         self.cap.release()
-        self.opened = False  # 已关闭
-        self.can_yolo = False
 
     @thread_runner
     def show_camera(self):
@@ -159,8 +149,8 @@ class WidgetCamera(QWidget):
             self.update()
 
     def read_image(self):
-        retval, image = self.cap.read()
-        if retval:
+        ret, image = self.cap.read()
+        if ret:
             # 删去最后一层
             if image.shape[2] == 4:
                 image = image[:, :, :-1]
@@ -168,27 +158,17 @@ class WidgetCamera(QWidget):
 
     @thread_runner
     def start_detect(self, opt):
-        if not self.yolo.init_opt(opt):
-            self.can_yolo = False
-            msg = msg_box.MsgWarning()
-            msg.setText('YOLO配置异常！')
-            msg.exec()  # 此处会阻塞
-            return
-        else:
-            self.can_yolo = True
         self.yolo.init_opt(opt)
         # 初始化yolo参数
-        time0 = time.time()
         while self.opened:
             if self.image is None:
                 continue
             # 检测
+            t0 = time.time()
             self.objects = self.yolo.obj_detect(self.image)
-            time1 = time.time()
-            tt = time1 - time0
-            self.fps = 1 / tt
+            t1 = time.time()
+            self.fps = 1 / (t1 - t0)
             self.update()
-            time0 = time1
 
     def resizeEvent(self, event):
         self.update()
@@ -202,8 +182,8 @@ class WidgetCamera(QWidget):
     def draw(self, qp):
         qp.setWindow(0, 0, self.width(), self.height())  # 设置窗口
         # 画框架背景
-        brush0 = QBrush(QColor('#cecece'))  # 框架背景色
-        qp.setBrush(brush0)
+        qp.setBrush(QColor('#cecece'))  # 框架背景色
+        qp.setPen(Qt.NoPen)
         rect = QRect(0, 0, self.width(), self.height())
         qp.drawRect(rect)
 
@@ -255,66 +235,113 @@ class WidgetConfig(QGroupBox):
     def __init__(self):
         super(WidgetConfig, self).__init__()
 
+        HEIGHT = 40
+
+        grid = QGridLayout()
+
         # 使用默认摄像头复选框
-        self.check = QCheckBox('使用默认摄像头')
+        self.check = QCheckBox('Use default camera')
         self.check.setChecked(True)
         self.check.stateChanged.connect(self.check_state_changed)
 
+        grid.addWidget(self.check, 0, 0, 1, 3)  # 一行三列
+
         # 选择视频文件
-        label_video = QLabel('视频文件')
+        label_video = QLabel('Source')
         self.line_video = QLineEdit()
+        self.line_video.setFixedHeight(HEIGHT)
         self.line_video.setEnabled(False)
-        self.btn_video = QPushButton('选择文件')
+        self.line_video.editingFinished.connect(
+            lambda: GLOBAL.record_config('video', self.line_video.text()))
+
+        self.btn_video = QPushButton('Choose')
+        self.btn_video.setFixedHeight(HEIGHT)
         self.btn_video.setEnabled(False)
         self.btn_video.clicked.connect(self.choose_video_file)
-        hboxa = QHBoxLayout()
-        hboxa.addWidget(label_video)
-        hboxa.addWidget(self.line_video)
-        hboxa.addWidget(self.btn_video)
+
+        grid.addWidget(label_video, 1, 0)
+        grid.addWidget(self.line_video, 1, 1)
+        grid.addWidget(self.btn_video, 1, 2)
 
         # 选择权重文件
-        label_weight = QLabel('Weights')
-        self.line_weight = QLineEdit()
-        self.line_weight.editingFinished.connect(
-            lambda: GLOBAL.record_config('weights', self.line_weight.text()))
-        self.btn_weight = QPushButton('选择文件')
-        self.btn_weight.clicked.connect(self.choose_weights_file)
+        label_weights = QLabel('Weights')
+        self.line_weights = QLineEdit()
+        self.line_weights.setFixedHeight(HEIGHT)
+        self.line_weights.editingFinished.connect(
+            lambda: GLOBAL.record_config('weights', self.line_weights.text()))
 
-        hbox1 = QHBoxLayout()
-        hbox1.addWidget(label_weight)
-        hbox1.addWidget(self.line_weight)
-        hbox1.addWidget(self.btn_weight)
+        self.btn_weights = QPushButton('Choose')
+        self.btn_weights.setFixedHeight(HEIGHT)
+        self.btn_weights.clicked.connect(self.choose_weights_file)
+
+        grid.addWidget(label_weights, 2, 0)
+        grid.addWidget(self.line_weights, 2, 1)
+        grid.addWidget(self.btn_weights, 2, 2)
 
         # 设置图像大小
-        label_size = QLabel('Size')
+        label_size = QLabel('Img Size')
         self.combo_size = QComboBox()
+        self.combo_size.setFixedHeight(HEIGHT)
+        self.combo_size.setStyleSheet(
+            'QAbstractItemView::item {height: 40px;}')
+        self.combo_size.setView(QListView())
         self.combo_size.addItem('320', 320)
         self.combo_size.addItem('416', 416)
         self.combo_size.addItem('480', 480)
         self.combo_size.addItem('544', 544)
         self.combo_size.addItem('640', 640)
         self.combo_size.setCurrentIndex(2)
+        self.combo_size.currentIndexChanged.connect(
+            lambda: GLOBAL.record_config('img_size', self.combo_size.currentData()))
 
-        hbox2 = QHBoxLayout()
-        hbox2.addWidget(label_size)
-        hbox2.addWidget(self.combo_size)
+        grid.addWidget(label_size, 3, 0)
+        grid.addWidget(self.combo_size, 3, 1, 1, 2)
 
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.check)
-        vbox.addLayout(hboxa)
-        vbox.addLayout(hbox1)
-        vbox.addLayout(hbox2)
+        # 设置置信度阈值
+        label_conf = QLabel('Confidence')
+        self.spin_conf = QDoubleSpinBox()
+        self.spin_conf.setFixedHeight(HEIGHT)
+        self.spin_conf.setDecimals(1)
+        self.spin_conf.setRange(0.1, 0.9)
+        self.spin_conf.setSingleStep(0.1)
+        if 'conf_thresh' in GLOBAL.config:
+            self.spin_conf.setValue(GLOBAL.config['conf_thresh'])
+        else:
+            self.spin_conf.setValue(0.4)  # 默认值
+            GLOBAL.record_config('conf_thresh', 0.4)
+        self.spin_conf.valueChanged.connect(lambda: GLOBAL.record_config(
+            'conf_thresh', round(self.spin_conf.value(), 1)))
 
-        self.setLayout(vbox)
+        grid.addWidget(label_conf, 4, 0)
+        grid.addWidget(self.spin_conf, 4, 1, 1, 2)
 
+        # 设置IOU阈值
+        label_iou = QLabel('IOU')
+        self.spin_iou = QDoubleSpinBox()
+        self.spin_iou.setFixedHeight(HEIGHT)
+        self.spin_iou.setDecimals(1)
+        self.spin_iou.setRange(0.1, 0.9)
+        self.spin_iou.setSingleStep(0.1)
+        if 'iou_thresh' in GLOBAL.config:
+            self.spin_iou.setValue(GLOBAL.config['iou_thresh'])
+        else:
+            self.spin_iou.setValue(0.5)  # 默认值
+            GLOBAL.record_config('iou_thresh', 0.5)
+        self.spin_iou.valueChanged.connect(lambda: GLOBAL.record_config(
+            'iou_thresh', round(self.spin_iou.value(), 1)))
+
+        grid.addWidget(label_iou, 5, 0)
+        grid.addWidget(self.spin_iou, 5, 1, 1, 2)
+
+        self.setLayout(grid)  # 设置布局
         self.init_config()  # 初始化配置
 
     def init_config(self):
         try:
             self.line_video.setText(GLOBAL.config['video'])
-            self.line_weight.setText(GLOBAL.config['weight'])
+            self.line_weights.setText(GLOBAL.config['weights'])
             self.combo_size.setCurrentIndex(
-                self.combo_size.findData(GLOBAL.config['size']))
+                self.combo_size.findData(GLOBAL.config['img_size']))
         except KeyError as err_key:
             print('参数项不存在: ' + str(err_key))
 
@@ -328,17 +355,19 @@ class WidgetConfig(QGroupBox):
 
     def choose_weights_file(self):
         """从系统中选择权重文件"""
-        file = QFileDialog.getOpenFileName(self, "Pre-trained YOLO weights", "./",
+        file = QFileDialog.getOpenFileName(self, "Pre-trained YOLOv5 Weights", "./",
                                            "Weights Files (*.pt);;All Files (*)")
-        self.line_weight.setText(file[0])
-        GLOBAL.record_config('weights', file[0])
+        if file[0] != '':
+            self.line_weights.setText(file[0])
+            GLOBAL.record_config('weights', file[0])
 
     def choose_video_file(self):
         """从系统中选择视频文件"""
-        file = QFileDialog.getOpenFileName(self, "Pre-trained YOLO weights", "./",
+        file = QFileDialog.getOpenFileName(self, "Video Files", "./",
                                            "Video Files (*)")
-        self.line_video.setText(file[0])
-        GLOBAL.record_config('video', file[0])
+        if file[0] != '':
+            self.line_video.setText(file[0])
+            GLOBAL.record_config('video', file[0])
 
 
 def main():

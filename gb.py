@@ -7,6 +7,12 @@ import msg_box
 
 class Global:
     def __init__(self):
+        # 保存的配置
+        # @video: 视频文件
+        # @weights: 权重文件
+        # @img_size: 图像大小，32的倍数（320|416|480|640）
+        # @conf_thresh: 置信度阈值（0.1-0.9）
+        # @iou_thresh: IOU阈值（0.1-0.9）
         self.config = dict()
 
     def record_config(self, key, value):
