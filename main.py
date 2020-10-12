@@ -136,7 +136,7 @@ class WidgetCamera(QWidget):
     def show_camera(self):
         while self.opened:
             self.read_image()
-            time.sleep(0.033)  # 每33毫秒(对应30帧的视频)执行一次show_camera方法
+            time.sleep(0.03)  # 每33毫秒(对应30帧的视频)执行一次show_camera方法
             self.update()
 
     def read_image(self):
