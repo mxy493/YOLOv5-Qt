@@ -1,42 +1,74 @@
 import os
-import shutil
+import re
 
 import numpy as np
 import torch
+
 from models.experimental import attempt_load
 from utils.datasets import letterbox
-from utils.general import (check_img_size, non_max_suppression, scale_coords, xyxy2xywh, set_logging)
+from utils.general import (check_img_size, non_max_suppression, scale_coords, set_logging)
 from utils.torch_utils import select_device, time_synchronized
 
 
-class Yolo5:
+class YOLO5:
     def __init__(self):
-        self.opt = {
-            'img_size': 480,
-            'conf_thresh': 0.4,
-            'iou_thresh': 0.5,
-            'agnostic_nms': True,
-            'output': 'inference/output'
-        }
+        self.opt = dict()  # 配置信息
         self.model = None
         self.device = None
         self.names = []
         self.colors = []
 
-    def init_opt(self, opt):
-        for k, v in opt.items():
-            self.opt[k] = v
+    def set_config(self, weights, device='cpu', img_size=480, conf=0.4, iou=0.5,
+                   agnostic=True, augment=True) -> bool:
+        """检查参数的正确性并设置参数，参数改变后需要重新设置"""
+        # 判断weights文件是否以'pt'结尾且真实存在
+        if not os.path.exists(weights) or '.pt' not in weights:
+            return False
+
+        # 判断device设置是否正确
+        check_device = True
+        if device in ['cpu', '0', '1', '2', '3']:
+            check_device = True
+        elif re.match(r'([0-3],){1,3}[0-3]]', device):
+            for c in ['0', '1', '2', '3']:
+                if device.count(c) > 1:
+                    check_device = False
+                    break
+        if not check_device:
+            return False
+
+        # img_size是否32的整数倍
+        if img_size % 32 != 0:
+            return False
+
+        if conf <= 0 or conf >= 1:
+            return False
+
+        if iou <= 0 or iou >= 1:
+            return False
+
+        # 初始化配置
+        self.opt = {
+            'weights': weights,
+            'device': device,
+            'img_size': img_size,
+            'conf_thresh': conf,
+            'iou_thresh': iou,
+            'agnostic_nms': agnostic,
+            'augment': augment
+        }
+        return True
+
+    def load_model(self):
+        """加载模型，参数改变后需要重新加载模型"""
         # Initialize
         set_logging()
         self.device = select_device(self.opt['device'])
-        # 确保输出文件夹存在
-        if os.path.exists(self.opt['output']):
-            shutil.rmtree(self.opt['output'])  # delete output folder
-        os.makedirs(self.opt['output'])  # make new output folder
 
         # Load model
         self.model = attempt_load(self.opt['weights'], map_location=self.device)  # load FP32 model
-        self.opt['img_size'] = check_img_size(self.opt['img_size'], s=self.model.stride.max())  # check img_size
+        self.opt['img_size'] = check_img_size(
+            self.opt['img_size'], s=self.model.stride.max())  # check img_size
 
         # Get names and colors
         self.names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
@@ -69,7 +101,7 @@ class Yolo5:
 
         # Apply NMS
         pred = non_max_suppression(pred, self.opt['conf_thresh'], self.opt['iou_thresh'],
-                                   classes=self.opt['classes'], agnostic=self.opt['agnostic_nms'])
+                                   classes=None, agnostic=self.opt['agnostic_nms'])
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image

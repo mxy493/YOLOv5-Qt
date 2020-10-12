@@ -15,12 +15,23 @@ class Global:
         # @iou_thresh: IOU阈值（0.1-0.9）
         self.config = dict()
 
-    def record_config(self, key, value):
-        """将设置参数写入到本地文件保存，传入键值对"""
-        # 更新配置
-        self.config[key] = value
+    def init_config(self):
         if not os.path.exists('config'):
-            os.mkdir('config')  # 创建log文件夹
+            os.mkdir('config')  # make new config folder
+            return
+        try:
+            with open('config/config.json', 'r') as file_settings:
+                GLOBAL.config = json.loads(file_settings.read())
+        except FileNotFoundError as err_file:
+            print('配置文件不存在: ' + str(err_file))
+
+    def record_config(self, _dict):
+        """将设置参数写入到本地文件保存，传入字典"""
+        # 更新配置
+        for k, v in _dict.items():
+            self.config[k] = v
+        if not os.path.exists('config'):
+            os.mkdir('config')  # 创建config文件夹
         try:
             # 写入文件
             with open('config/config.json', 'w') as file_config:
