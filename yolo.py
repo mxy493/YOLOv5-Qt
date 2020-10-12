@@ -29,7 +29,7 @@ class YOLO5:
         check_device = True
         if device in ['cpu', '0', '1', '2', '3']:
             check_device = True
-        elif re.match(r'([0-3],){1,3}[0-3]]', device):
+        elif re.match(r'[0-3],[0-3](,[0-3])?(,[0-3])?', device):
             for c in ['0', '1', '2', '3']:
                 if device.count(c) > 1:
                     check_device = False

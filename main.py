@@ -8,8 +8,8 @@ from PySide2.QtGui import (QPainter, QBrush, QColor, QImage, QPixmap, Qt, QFont,
                            QPen)
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout,
                                QHBoxLayout, QWidget, QGroupBox, QLabel,
-                               QLineEdit, QApplication, QFileDialog, QCheckBox, QComboBox,
-                               QGridLayout, QListView, QDoubleSpinBox)
+                               QLineEdit, QApplication, QFileDialog, QCheckBox,
+                               QComboBox, QGridLayout, QListView, QDoubleSpinBox)
 
 import msg_box
 from gb import GLOBAL
@@ -83,6 +83,7 @@ class MainWindow(QMainWindow):
                 msg = msg_box.MsgWarning()
                 msg.setText('配置信息有误，无法正常加载YOLO模型！')
                 msg.exec()
+                self.camera.close_camera()  # 关闭摄像头
                 return
             self.camera.yolo.load_model()
             self.camera.start_detect()
