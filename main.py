@@ -178,47 +178,47 @@ class WidgetCamera(QWidget):
         qp.drawRect(rect)
 
         sw, sh = self.width(), self.height()  # 图像窗口宽高
-        pw, ph = 0, 0  # 缩放后的QPixmap大小
 
         # 画图
-        yh = 0
         if self.image is not None:
             ih, iw, _ = self.image.shape
             self.scale = sw / iw if sw / iw < sh / ih else sh / ih  # 缩放比例
-            yh = round((self.height() - ih * self.scale) / 2)
+            px = round((sw - iw * self.scale) / 2)
+            py = round((sh - ih * self.scale) / 2)
             qimage = QImage(self.image.data, iw, ih, 3 * iw, QImage.Format_RGB888)  # 转QImage
-            qpixmap = QPixmap.fromImage(qimage.scaled(self.width(), self.height(), Qt.KeepAspectRatio))  # 转QPixmap
-            pw, ph = qpixmap.width(), qpixmap.height()
-            qp.drawPixmap(0, yh, qpixmap)
+            qpixmap = QPixmap.fromImage(qimage.scaled(sw, sh, Qt.KeepAspectRatio))  # 转QPixmap
+            pw, ph = qpixmap.width(), qpixmap.height()  # 缩放后的QPixmap大小
+            qp.drawPixmap(px, py, qpixmap)
 
-        font = QFont()
-        font.setFamily('Microsoft YaHei')
-        if self.fps > 0:
-            font.setPointSize(14)
-            qp.setFont(font)
+            font = QFont()
+            font.setFamily('Microsoft YaHei')
+            if self.fps > 0:
+                font.setPointSize(14)
+                qp.setFont(font)
+                pen = QPen()
+                pen.setColor(Qt.white)
+                qp.setPen(pen)
+                qp.drawText(sw - px - 150, py + 40, 'FPS: ' + str(round(self.fps, 2)))
+
+            # 画目标框
             pen = QPen()
-            pen.setColor(Qt.white)
-            qp.setPen(pen)
-            qp.drawText(self.width() - 150, yh + 40, 'FPS: ' + str(round(self.fps, 2)))
+            pen.setWidth(2)  # 边框宽度
+            for obj in self.objects:
+                font.setPointSize(10)
+                qp.setFont(font)
+                rgb = [round(c) for c in obj['color']]
+                pen.setColor(QColor(rgb[0], rgb[1], rgb[2]))  # 边框颜色
+                brush1 = QBrush(Qt.NoBrush)  # 内部不填充
+                qp.setBrush(brush1)
+                qp.setPen(pen)
+                # 坐标 宽高
+                ox, oy = px + round(pw * obj['x']), py + round(ph * obj['y'])
+                ow, oh = round(pw * obj['w']), round(ph * obj['h'])
+                obj_rect = QRect(ox, oy, ow, oh)
+                qp.drawRect(obj_rect)  # 画矩形框
 
-        # 画目标框
-        pen = QPen()
-        pen.setWidth(2)  # 边框宽度
-        for obj in self.objects:
-            font.setPointSize(10)
-            qp.setFont(font)
-            rgb = [round(c) for c in obj['color']]
-            pen.setColor(QColor(rgb[0], rgb[1], rgb[2]))  # 边框颜色
-            brush1 = QBrush(Qt.NoBrush)  # 内部不填充
-            qp.setBrush(brush1)
-            qp.setPen(pen)
-            # 坐标 宽高
-            tx, ty = round(pw * obj['x']), yh + round(ph * obj['y'])
-            tw, th = round(pw * obj['w']), round(ph * obj['h'])
-            obj_rect = QRect(tx, ty, tw, th)
-            qp.drawRect(obj_rect)  # 画矩形框
-            # 画 类别 和 置信度
-            qp.drawText(tx, ty - 5, str(obj['class']) + str(round(obj['confidence'], 2)))
+                # 画 类别 和 置信度
+                qp.drawText(ox, oy - 5, str(obj['class']) + str(round(obj['confidence'], 2)))
 
 
 class WidgetConfig(QGroupBox):
