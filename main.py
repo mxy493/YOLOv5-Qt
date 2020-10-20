@@ -134,10 +134,13 @@ class WidgetCamera(QWidget):
 
     @thread_runner
     def show_camera(self):
+        print('显示画面线程开始')
         while self.opened:
             self.read_image()
             time.sleep(0.03)  # 每33毫秒(对应30帧的视频)执行一次show_camera方法
             self.update()
+        self.update()
+        print('显示画面线程结束')
 
     def read_image(self):
         ret, image = self.cap.read()
@@ -150,6 +153,7 @@ class WidgetCamera(QWidget):
     @thread_runner
     def start_detect(self):
         # 初始化yolo参数
+        print('目标检测线程开始')
         while self.opened:
             if self.image is None:
                 continue
@@ -159,6 +163,8 @@ class WidgetCamera(QWidget):
             t1 = time.time()
             self.fps = 1 / (t1 - t0)
             self.update()
+        self.update()
+        print('目标检测线程结束')
 
     def resizeEvent(self, event):
         self.update()
@@ -171,6 +177,7 @@ class WidgetCamera(QWidget):
 
     def draw(self, qp):
         qp.setWindow(0, 0, self.width(), self.height())  # 设置窗口
+        qp.setRenderHint(QPainter.SmoothPixmapTransform)
         # 画框架背景
         qp.setBrush(QColor('#cecece'))  # 框架背景色
         qp.setPen(Qt.NoPen)
@@ -179,8 +186,11 @@ class WidgetCamera(QWidget):
 
         sw, sh = self.width(), self.height()  # 图像窗口宽高
 
+        if not self.opened:
+            qp.drawPixmap(sw / 2 - 100, sh / 2 - 100, 200, 200, QPixmap('img/video.svg'))
+
         # 画图
-        if self.image is not None:
+        if self.opened and self.image is not None:
             ih, iw, _ = self.image.shape
             self.scale = sw / iw if sw / iw < sh / ih else sh / ih  # 缩放比例
             px = round((sw - iw * self.scale) / 2)
