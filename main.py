@@ -5,7 +5,7 @@ import time
 import cv2
 from PySide2.QtCore import QRect
 from PySide2.QtGui import (QPainter, QBrush, QColor, QImage, QPixmap, Qt, QFont,
-                           QPen)
+                           QPen, QIcon)
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout,
                                QHBoxLayout, QWidget, QGroupBox, QLabel,
                                QLineEdit, QApplication, QFileDialog, QCheckBox,
@@ -29,6 +29,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('YOLOv5 Object Detection')
+        self.setWindowIcon(QIcon('img/yologo.png'))
         self.setMinimumSize(1200, 800)
 
         GLOBAL.init_config()
@@ -256,8 +257,13 @@ class WidgetConfig(QGroupBox):
         self.line_video.editingFinished.connect(lambda: GLOBAL.record_config(
             {'video': self.line_video.text()}
         ))
+        if 'video' in GLOBAL.config:
+            self.line_video.setText(GLOBAL.config['video'])
+        self.line_video.editingFinished.connect(
+            lambda: GLOBAL.record_config({'video': self.line_video.text()}))
 
-        self.btn_video = QPushButton('Choose')
+        self.btn_video = QPushButton('...')
+        self.btn_video.setFixedWidth(40)
         self.btn_video.setFixedHeight(HEIGHT)
         self.btn_video.setEnabled(False)
         self.btn_video.clicked.connect(self.choose_video_file)
@@ -278,7 +284,8 @@ class WidgetConfig(QGroupBox):
             {'weights': self.line_weights.text()}
         ))
 
-        self.btn_weights = QPushButton('Choose')
+        self.btn_weights = QPushButton('...')
+        self.btn_weights.setFixedWidth(40)
         self.btn_weights.setFixedHeight(HEIGHT)
         self.btn_weights.clicked.connect(self.choose_weights_file)
 
@@ -318,6 +325,13 @@ class WidgetConfig(QGroupBox):
         self.combo_size.currentIndexChanged.connect(lambda: GLOBAL.record_config(
             {'img_size': self.combo_size.currentData()}
         ))
+        if 'img_size' in GLOBAL.config:
+            self.combo_size.setCurrentIndex(
+                self.combo_size.findData(GLOBAL.config['img_size']))
+        else:
+            self.combo_size.setCurrentIndex(2)
+        self.combo_size.currentIndexChanged.connect(
+            lambda: GLOBAL.record_config({'img_size': self.combo_size.currentData()}))
 
         grid.addWidget(label_size, 4, 0)
         grid.addWidget(self.combo_size, 4, 1, 1, 2)
