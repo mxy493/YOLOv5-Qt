@@ -138,6 +138,7 @@ class WidgetCamera(QWidget):
 
     def close_camera(self):
         self.opened = False  # 先关闭目标检测线程再关闭摄像头
+        self.stop_detect()  # 停止目标检测线程
         time.sleep(0.1)  # 等待读取完最后一帧画面，读取一帧画面0.1s以内，一般0.02~0.03s
         self.cap.release()
         self.reset()  # 恢复初始状态
