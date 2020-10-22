@@ -63,31 +63,37 @@ class MainWindow(QMainWindow):
         if self.camera.cap.isOpened():
             self.camera.close_camera()  # 关闭摄像头
         else:
-            self.camera.open_camera(
+            ret = self.camera.open_camera(
                 use_camera=self.config.check_camera.isChecked(),
                 video=self.config.line_video.text()
             )
-            self.camera.show_camera()
+            if ret:
+                fps = 0 if self.config.check_camera.isChecked() else 30
+                self.camera.show_camera(fps=fps)
+                if self.reload_yolo():
+                    self.camera.start_detect()
 
-            # 目标检测
-            self.config.save_config()
-            check = self.camera.yolo.set_config(
-                weights=GLOBAL.config['weights'],
-                device=GLOBAL.config['device'],
-                img_size=GLOBAL.config['img_size'],
-                conf=GLOBAL.config['conf_thresh'],
-                iou=GLOBAL.config['iou_thresh'],
-                agnostic=GLOBAL.config['agnostic'],
-                augment=GLOBAL.config['augment']
-            )
-            if not check:
-                msg = msg_box.MsgWarning()
-                msg.setText('配置信息有误，无法正常加载YOLO模型！')
-                msg.exec()
-                self.camera.close_camera()  # 关闭摄像头
-                return
-            self.camera.yolo.load_model()
-            self.camera.start_detect()
+    def reload_yolo(self):
+        """重新加载YOLO模型"""
+        # 目标检测
+        self.config.save_config()
+        check = self.camera.yolo.set_config(
+            weights=self.config.line_weights.text(),
+            device=self.config.line_device.text(),
+            img_size=self.config.combo_size.currentData(),
+            conf=round(self.config.spin_conf.value(), 1),
+            iou=round(self.config.spin_iou.value(), 1),
+            agnostic=self.config.check_agnostic.isChecked(),
+            augment=self.config.check_augment.isChecked()
+        )
+        if not check:
+            msg = msg_box.MsgWarning()
+            msg.setText('配置信息有误，无法正常加载YOLO模型！')
+            msg.exec()
+            self.camera.stop_detect()  # 关闭摄像头
+            return False
+        self.camera.yolo.load_model()
+        return True
 
     def resizeEvent(self, event):
         self.update()
@@ -104,6 +110,7 @@ class WidgetCamera(QWidget):
         self.yolo = YOLO5()
 
         self.opened = False  # 摄像头已打开
+        self.detecting = False  # 目标检测中
         self.cap = cv2.VideoCapture()
 
         self.pix_image = None  # QPixmap视频帧
@@ -131,14 +138,20 @@ class WidgetCamera(QWidget):
 
     def close_camera(self):
         self.opened = False  # 先关闭目标检测线程再关闭摄像头
+        self.stop_detect()  # 停止目标检测线程
+        time.sleep(0.1)  # 等待读取完最后一帧画面，读取一帧画面0.1s以内，一般0.02~0.03s
         self.cap.release()
+        self.reset()  # 恢复初始状态
 
     @thread_runner
-    def show_camera(self):
+    def show_camera(self, fps=0):
+        """传入参数帧率，摄像头使用默认值0，视频一般取30|60"""
         print('显示画面线程开始')
+        wait = 1 / fps if fps else 0
         while self.opened:
-            self.read_image()
-            time.sleep(0.03)  # 每33毫秒(对应30帧的视频)执行一次show_camera方法
+            self.read_image()  # 0.1s以内，一般0.02~0.03s
+            if fps:
+                time.sleep(wait)  # 等待wait秒读取一帧画面并显示
             self.update()
         self.update()
         print('显示画面线程结束')
@@ -154,8 +167,9 @@ class WidgetCamera(QWidget):
     @thread_runner
     def start_detect(self):
         # 初始化yolo参数
+        self.detecting = True
         print('目标检测线程开始')
-        while self.opened:
+        while self.detecting:
             if self.image is None:
                 continue
             # 检测
@@ -166,6 +180,19 @@ class WidgetCamera(QWidget):
             self.update()
         self.update()
         print('目标检测线程结束')
+
+    def stop_detect(self):
+        """停止目标检测"""
+        self.detecting = False
+
+    def reset(self):
+        """恢复初始状态"""
+        self.opened = False  # 摄像头关闭
+        self.pix_image = None  # 无QPixmap视频帧
+        self.image = None  # 当前无读取到的图片
+        self.scale = 1  # 比例无
+        self.objects = []  # 无检测到的目标
+        self.fps = 0  # 帧率无
 
     def resizeEvent(self, event):
         self.update()

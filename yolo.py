@@ -34,6 +34,8 @@ class YOLO5:
                 if device.count(c) > 1:
                     check_device = False
                     break
+        else:
+            check_device = False
         if not check_device:
             return False
 
