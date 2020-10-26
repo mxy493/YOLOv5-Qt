@@ -277,15 +277,9 @@ class WidgetConfig(QGroupBox):
         # 选择视频文件
         label_video = QLabel('Source')
         self.line_video = QLineEdit()
-        if 'video' in GLOBAL.config:
-            self.line_video.setText(GLOBAL.config['video'])
         self.line_video.setFixedHeight(HEIGHT)
         self.line_video.setEnabled(False)
-        self.line_video.editingFinished.connect(lambda: GLOBAL.record_config(
-            {'video': self.line_video.text()}
-        ))
-        if 'video' in GLOBAL.config:
-            self.line_video.setText(GLOBAL.config['video'])
+        self.line_video.setText(GLOBAL.config.get('video', ''))
         self.line_video.editingFinished.connect(
             lambda: GLOBAL.record_config({'video': self.line_video.text()}))
 
@@ -304,9 +298,8 @@ class WidgetConfig(QGroupBox):
         # 选择权重文件
         label_weights = QLabel('Weights')
         self.line_weights = QLineEdit()
-        if 'weights' in GLOBAL.config:
-            self.line_weights.setText(GLOBAL.config['weights'])
         self.line_weights.setFixedHeight(HEIGHT)
+        self.line_weights.setText(GLOBAL.config.get('weights', ''))
         self.line_weights.editingFinished.connect(lambda: GLOBAL.record_config(
             {'weights': self.line_weights.text()}
         ))
@@ -323,10 +316,7 @@ class WidgetConfig(QGroupBox):
         # 是否使用GPU
         label_device = QLabel('CUDA device')
         self.line_device = QLineEdit('cpu')
-        if 'device' in GLOBAL.config:
-            self.line_device.setText(GLOBAL.config['device'])
-        else:
-            self.line_device.setText('cpu')
+        self.line_device.setText(GLOBAL.config.get('device', 'cpu'))
         self.line_device.setPlaceholderText('cpu or 0 or 0,1,2,3')
         self.line_device.setFixedHeight(HEIGHT)
         self.line_device.editingFinished.connect(lambda: GLOBAL.record_config(
@@ -348,17 +338,10 @@ class WidgetConfig(QGroupBox):
         self.combo_size.addItem('480', 480)
         self.combo_size.addItem('544', 544)
         self.combo_size.addItem('640', 640)
-        self.combo_size.setCurrentIndex(2)
+        self.combo_size.setCurrentIndex(
+            self.combo_size.findData(GLOBAL.config.get('img_size', 2)))
         self.combo_size.currentIndexChanged.connect(lambda: GLOBAL.record_config(
-            {'img_size': self.combo_size.currentData()}
-        ))
-        if 'img_size' in GLOBAL.config:
-            self.combo_size.setCurrentIndex(
-                self.combo_size.findData(GLOBAL.config['img_size']))
-        else:
-            self.combo_size.setCurrentIndex(2)
-        self.combo_size.currentIndexChanged.connect(
-            lambda: GLOBAL.record_config({'img_size': self.combo_size.currentData()}))
+            {'img_size': self.combo_size.currentData()}))
 
         grid.addWidget(label_size, 4, 0)
         grid.addWidget(self.combo_size, 4, 1, 1, 2)
@@ -370,11 +353,7 @@ class WidgetConfig(QGroupBox):
         self.spin_conf.setDecimals(1)
         self.spin_conf.setRange(0.1, 0.9)
         self.spin_conf.setSingleStep(0.1)
-        if 'conf_thresh' in GLOBAL.config:
-            self.spin_conf.setValue(GLOBAL.config['conf_thresh'])
-        else:
-            self.spin_conf.setValue(0.4)  # 默认值
-            GLOBAL.record_config({'conf_thresh': 0.4})
+        self.spin_conf.setValue(GLOBAL.config.get('conf_thresh', 0.5))
         self.spin_conf.valueChanged.connect(lambda: GLOBAL.record_config(
             {'conf_thresh': round(self.spin_conf.value(), 1)}
         ))
@@ -389,11 +368,7 @@ class WidgetConfig(QGroupBox):
         self.spin_iou.setDecimals(1)
         self.spin_iou.setRange(0.1, 0.9)
         self.spin_iou.setSingleStep(0.1)
-        if 'iou_thresh' in GLOBAL.config:
-            self.spin_iou.setValue(GLOBAL.config['iou_thresh'])
-        else:
-            self.spin_iou.setValue(0.5)  # 默认值
-            GLOBAL.record_config({'iou_thresh': 0.5})
+        self.spin_iou.setValue(GLOBAL.config.get('iou_thresh', 0.5))
         self.spin_iou.valueChanged.connect(lambda: GLOBAL.record_config(
             {'iou_thresh': round(self.spin_iou.value(), 1)}
         ))
@@ -403,10 +378,7 @@ class WidgetConfig(QGroupBox):
 
         # class-agnostic NMS
         self.check_agnostic = QCheckBox('Agnostic')
-        if 'agnostic' in GLOBAL.config:
-            self.check_agnostic.setChecked(GLOBAL.config['agnostic'])
-        else:
-            self.check_agnostic.setChecked(True)
+        self.check_agnostic.setChecked(GLOBAL.config.get('agnostic', True))
         self.check_agnostic.stateChanged.connect(lambda: GLOBAL.record_config(
             {'agnostic': self.check_agnostic.isChecked()}
         ))
@@ -415,10 +387,7 @@ class WidgetConfig(QGroupBox):
 
         # augmented inference
         self.check_augment = QCheckBox('Augment')
-        if 'augment' in GLOBAL.config:
-            self.check_augment.setChecked(GLOBAL.config['augment'])
-        else:
-            self.check_augment.setChecked(True)
+        self.check_augment.setChecked(GLOBAL.config.get('augment', True))
         self.check_augment.stateChanged.connect(lambda: GLOBAL.record_config(
             {'augment': self.check_augment.isChecked()}
         ))
