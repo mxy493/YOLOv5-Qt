@@ -339,7 +339,7 @@ class WidgetConfig(QGroupBox):
         self.combo_size.addItem('544', 544)
         self.combo_size.addItem('640', 640)
         self.combo_size.setCurrentIndex(
-            self.combo_size.findData(GLOBAL.config.get('img_size', 2)))
+            self.combo_size.findData(GLOBAL.config.get('img_size', 480)))
         self.combo_size.currentIndexChanged.connect(lambda: GLOBAL.record_config(
             {'img_size': self.combo_size.currentData()}))
 
