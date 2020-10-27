@@ -4,7 +4,7 @@
 cx_Freeze 打包脚本
 打包后仍然包含大量无用文件，可手动删除，以下文件经测试删除后不影响程序运行
 PySide2 包含大量无用文件: *.exe、*WebEngine*、PySide2/translations、PySide2/qml、
-    PySide2/*3D*、PySide2/resources、PySide2/*quick*
+    PySide2/*3D*、PySide2/resources、PySide2/*quick*、PySide2/examples
 torch 包含无用的大体积文件: dnnl.lib, mkldnn.lib
 """
 
@@ -12,13 +12,9 @@ import sys
 
 from cx_Freeze import setup, Executable
 
-base = None
-if sys.platform == 'win32':
-    base = 'Win32GUI'
-
 options = {
     'build_exe': {
-        'build_exe': 'build/',
+        'build_exe': './helper/build/',
         'optimize': 0,
         'excludes': ['caffe2', 'cairo', 'absl', 'certifi', 'chardet', 'colorama',
                      'curses', 'Cython', 'dbm', 'future', 'idna', 'lib2to3',
@@ -44,9 +40,13 @@ options = {
     }
 }
 
+base = 'Console'
+if sys.platform == 'win32':
+    base = 'Win32GUI'
+
 executables = [
     Executable('main.py',
-               # base=base,  # 注释后可打开控制台窗口运行
+               base=base,  # 注释后可打开控制台窗口运行
                targetName='YOLOv5-Qt',
                icon='img/yologo64.ico'
                )
