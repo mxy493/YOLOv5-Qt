@@ -3,17 +3,19 @@ import threading
 import time
 
 import cv2
-from PySide2.QtCore import QRect
+from PySide2.QtCore import QRect, QSize
 from PySide2.QtGui import (QPainter, QBrush, QColor, QImage, QPixmap, Qt, QFont,
                            QPen, QIcon)
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout,
                                QHBoxLayout, QWidget, QGroupBox, QLabel,
                                QLineEdit, QApplication, QFileDialog, QCheckBox,
-                               QComboBox, QGridLayout, QListView, QDoubleSpinBox)
+                               QComboBox, QGridLayout, QListView, QDoubleSpinBox,
+                               QDesktopWidget, QStyle)
 
 import msg_box
 from gb import GLOBAL
 from yolo import YOLO5
+from info import APP_NAME, APP_VERSION
 
 
 def thread_runner(func):
@@ -28,9 +30,8 @@ def thread_runner(func):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('YOLOv5 Object Detection')
+        self.setWindowTitle(f'{APP_NAME} {APP_VERSION}')
         self.setWindowIcon(QIcon('img/yologo.png'))
-        self.setMinimumSize(1200, 800)
 
         GLOBAL.init_config()
 
@@ -57,7 +58,19 @@ class MainWindow(QMainWindow):
         self.central_widget.setLayout(vbox)
 
         self.setCentralWidget(self.central_widget)
-        self.show()
+
+        # ---------- 自适应不同大小的屏幕  ---------- #
+        screen = QDesktopWidget().screenGeometry(self)
+        available = QDesktopWidget().availableGeometry(self)
+        title_height = self.style().pixelMetric(QStyle.PM_TitleBarHeight)
+        if screen.width() < 1280 or screen.height() < 768:
+            self.setWindowState(Qt.WindowMaximized)  # 窗口最大化显示
+            self.setFixedSize(
+                available.width(),
+                available.height() - title_height)  # 固定窗口大小
+        else:
+            self.setMinimumSize(QSize(1100, 700))  # 最小宽高
+        self.show()  # 显示窗口
 
     def oc_camera(self):
         if self.camera.cap.isOpened():
