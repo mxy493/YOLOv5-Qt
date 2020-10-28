@@ -40,11 +40,6 @@ pycocotools/*
 results*.txt
 gcp_test*.sh
 
-# MATLAB GitIgnore -----------------------------------------------------------------------------------------------------
-*.m~
-*.mat
-!targets*.mat
-
 # Neural Network weights -----------------------------------------------------------------------------------------------
 *.weights
 *.pt
@@ -63,6 +58,8 @@ __pycache__/
 
 # C extensions
 *.so
+
+*.exe
 
 # Distribution / packaging
 .Python
@@ -111,16 +108,6 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 target/
