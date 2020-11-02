@@ -5,16 +5,14 @@
 import os
 import shutil
 import sys
+from helper import clean
 
 from cx_Freeze import setup, Executable
-
-# 工作路径
-workspace = os.getcwd()
 
 
 options = {
     'build_exe': {
-        'build_exe': './build',
+        'build_exe': './setup',
         'optimize': 0,
         'excludes': ['caffe2', 'cairo', 'absl', 'certifi', 'chardet', 'colorama',
                      'curses', 'Cython', 'dbm', 'future', 'idna', 'lib2to3',
@@ -52,7 +50,7 @@ substrs = ['.exe', 'WebEngine', 'translations', '3D', 'resources',
            'dnnl.lib', 'mkldnn.lib']
 
 
-def clean():
+def rm_build():
     """打包前删除旧的工作文件"""
     direc = 'build'
     if os.path.exists(direc):
@@ -86,29 +84,10 @@ def freeze():
     )
 
 
-def rm_useless_files(strings):
-    """接受一个字符串列表，清理所有包含这些字符串的文件夹"""
-    root_path = os.path.abspath(os.path.join(workspace, 'build', 'lib'))
-    for s in strings:
-        s = s.lower()
-        for root, dirs, files in os.walk(root_path):
-            for d in dirs:
-                if s in d.lower():
-                    full_path = os.path.join(root_path, root, d)
-                    p = os.path.normpath(os.path.abspath(full_path))
-                    print(f'RemoveDir: {p}')
-                    shutil.rmtree(p)
-            for f in files:
-                if s in f.lower():
-                    full_path = os.path.join(root_path, root, f)
-                    p = os.path.normpath(os.path.abspath(full_path))
-                    print(f'RemoveFile: {p}')
-                    os.remove(p)
-
-
 if __name__ == '__main__':
-    clean()
+    rm_build()
     freeze()
     c = input('清理无用文件(y/n): ').lower()
     if c == 'y':
-        rm_useless_files(substrs)
+        root_path = os.path.abspath('./setup/lib')
+        clean.rm_useless_files(root_path, substrs)
