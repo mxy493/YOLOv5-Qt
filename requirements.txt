@@ -1,7 +1,7 @@
 # pip install -r requirements.txt
 
 Cython
-matplotlib~=3.2.2
+matplotlib>=3.2.2
 numpy>=1.18.5
 opencv-python>=4.1.2
 pillow~=7.2.0
@@ -13,3 +13,5 @@ torchvision>=0.7.0
 tqdm>=4.41.0
 
 PySide2~=5.15.1
+
+pyinstaller>=4.0
