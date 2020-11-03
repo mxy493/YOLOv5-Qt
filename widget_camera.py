@@ -6,11 +6,11 @@ Email: mxy493@qq.com
 Date: 2020/11/3
 Desc: 摄像头界面
 """
-
+import os
 import time
 
 import cv2
-from PySide2.QtCore import QRect
+from PySide2.QtCore import QRect, QTimer
 from PySide2.QtGui import QPainter, QColor, Qt, QPixmap, QImage, QFont, QBrush, QPen
 from PySide2.QtWidgets import QWidget
 
@@ -28,6 +28,9 @@ class WidgetCamera(QWidget):
         self.opened = False  # 摄像头已打开
         self.detecting = False  # 目标检测中
         self.cap = cv2.VideoCapture()
+
+        self.fourcc = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')  # XVID MPEG-4
+        self.writer = cv2.VideoWriter()  # VideoWriter，打开摄像头后再初始化
 
         self.pix_image = None  # QPixmap视频帧
         self.image = None  # 当前读取到的图片
@@ -79,6 +82,51 @@ class WidgetCamera(QWidget):
             if image.shape[2] == 4:
                 image = image[:, :, :-1]
             self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # image
+
+    @thread_runner
+    def run_video_recorder(self, fps=30):
+        """运行视频写入器"""
+        print('视频录制线程开始')
+        now = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+        # 确保输出文件夹存在
+        path = 'output'
+        if not os.path.exists(path):
+            os.mkdir(path)
+        # 等待有画面
+        t0 = time.time()
+        while self.image is None:
+            time.sleep(0.01)
+            # 避免由于没有画面导致线程无法退出
+            if time.time() - t0 > 3:
+                print('超时未获取到帧, 视频录制失败!')
+                break
+
+        # 有画面了，可以开始写入
+        if self.image is not None:
+            # 打开视频写入器
+            h, w, _ = self.image.shape
+            self.writer.open(
+                filename=f'{path}/{now}_record.avi',
+                fourcc=self.fourcc,
+                fps=fps,
+                frameSize=(w, h))  # 保存视频
+
+            wait = 1 / fps - 0.004  # 间隔多少毫秒，减掉大概1~5ms的写入时间
+            while self.opened:
+                self.writer.write(self.image)  # 写入一帧画面，大概耗时1~2ms
+                time.sleep(wait)
+        print('视频录制线程结束')
+
+    def stop_video_recorder(self):
+        """停止视频录制线程"""
+        self.writer.release()
+
+        path = os.path.abspath('output')
+        msg = msg_box.MsgSuccess()
+        msg.setText(f'录制的视频已保存到以下路径:\n{path}')
+        msg.setInformativeText('本窗口将在5s内自动关闭!')
+        QTimer().singleShot(5000, msg.accept)
+        msg.exec()
 
     @thread_runner
     def start_detect(self):

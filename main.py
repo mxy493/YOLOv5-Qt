@@ -60,6 +60,8 @@ class MainWindow(QMainWindow):
     def oc_camera(self):
         if self.camera.cap.isOpened():
             self.camera.close_camera()  # 关闭摄像头
+            if self.camera.writer.isOpened():
+                self.camera.writer.release()  # 关闭写入器
         else:
             ret = self.camera.open_camera(
                 use_camera=self.config.check_camera.isChecked(),
@@ -67,9 +69,11 @@ class MainWindow(QMainWindow):
             )
             if ret:
                 fps = 0 if self.config.check_camera.isChecked() else 30
-                self.camera.show_camera(fps=fps)
+                self.camera.show_camera(fps=fps)  # 显示画面
+                if self.config.check_record.isChecked():
+                    self.camera.run_video_recorder()  # 录制视频
                 if self.reload_yolo():
-                    self.camera.start_detect()
+                    self.camera.start_detect()  # 目标检测
 
     def reload_yolo(self):
         """重新加载YOLO模型"""

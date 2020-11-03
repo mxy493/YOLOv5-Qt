@@ -148,6 +148,10 @@ class WidgetConfig(QGroupBox):
 
         grid.addWidget(self.check_augment, 8, 0, 1, 3)  # 一行三列
 
+        # 视频录制
+        self.check_record = QCheckBox('Record video')
+        grid.addWidget(self.check_record, 9, 0, 1, 3)  # 一行三列
+
         self.setLayout(grid)  # 设置布局
 
     def slot_check_camera(self):
