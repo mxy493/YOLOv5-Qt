@@ -1,8 +1,18 @@
 # coding=utf-8
 import json
 import os
+import threading
 
 import msg_box
+
+
+def thread_runner(func):
+    """多线程"""
+
+    def wrapper(*args, **kwargs):
+        threading.Thread(target=func, args=args, kwargs=kwargs).start()
+
+    return wrapper
 
 
 class Global:
