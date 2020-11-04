@@ -119,14 +119,15 @@ class WidgetCamera(QWidget):
 
     def stop_video_recorder(self):
         """停止视频录制线程"""
-        self.writer.release()
+        if self.writer.isOpened():
+            self.writer.release()
 
-        path = os.path.abspath('output')
-        msg = msg_box.MsgSuccess()
-        msg.setText(f'录制的视频已保存到以下路径:\n{path}')
-        msg.setInformativeText('本窗口将在5s内自动关闭!')
-        QTimer().singleShot(5000, msg.accept)
-        msg.exec()
+            path = os.path.abspath('output')
+            msg = msg_box.MsgSuccess()
+            msg.setText(f'录制的视频已保存到以下路径:\n{path}')
+            msg.setInformativeText('本窗口将在5s内自动关闭!')
+            QTimer().singleShot(5000, msg.accept)
+            msg.exec()
 
     @thread_runner
     def start_detect(self):

@@ -60,8 +60,7 @@ class MainWindow(QMainWindow):
     def oc_camera(self):
         if self.camera.cap.isOpened():
             self.camera.close_camera()  # 关闭摄像头
-            if self.camera.writer.isOpened():
-                self.camera.writer.release()  # 关闭写入器
+            self.camera.stop_video_recorder()  # 关闭写入器
         else:
             ret = self.camera.open_camera(
                 use_camera=self.config.check_camera.isChecked(),
