@@ -209,7 +209,8 @@ class WidgetCamera(QWidget):
             for obj in self.objects:
                 font.setPointSize(10)
                 qp.setFont(font)
-                rgb = [round(c) for c in obj['color']]
+                # rgb = [round(c) for c in obj['color']]
+                rgb = [255, 255, 255]
                 pen.setColor(QColor(rgb[0], rgb[1], rgb[2]))  # 边框颜色
                 brush1 = QBrush(Qt.NoBrush)  # 内部不填充
                 qp.setBrush(brush1)
@@ -221,5 +222,5 @@ class WidgetCamera(QWidget):
                 qp.drawRect(obj_rect)  # 画矩形框
 
                 # 画 类别 和 置信度
-                qp.drawText(ox, oy - 5, str(obj['class']) + str(round(obj['confidence'], 2)))
+                qp.drawText(ox, oy - 5, f"{obj.get('id')}")
 
