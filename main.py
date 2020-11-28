@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
         self.camera = WidgetCamera()  # 摄像头
         self.config = WidgetConfig()  # Yolo配置界面
 
-        self.btn_camera = QPushButton('开启/关闭摄像头')  # 开启或关闭摄像头
+        self.btn_camera = QPushButton('Open/Close Camera')  # 开启或关闭摄像头
         self.btn_camera.setFixedHeight(60)
         vbox1 = QVBoxLayout()
         vbox1.addWidget(self.config)

@@ -12,7 +12,7 @@ from utils.general import (check_img_size, non_max_suppression, scale_coords, se
 from utils.torch_utils import select_device, time_synchronized
 
 
-def bbox_rel(image_width, image_height,  *xyxy):
+def bbox_rel(*xyxy):
     """" Calculates the relative bounding box from absolute pixel values. """
     bbox_left = min([xyxy[0].item(), xyxy[2].item()])
     bbox_top = min([xyxy[1].item(), xyxy[3].item()])
@@ -23,14 +23,6 @@ def bbox_rel(image_width, image_height,  *xyxy):
     w = bbox_w
     h = bbox_h
     return x_c, y_c, w, h
-
-
-def compute_color_for_labels(label):
-    """
-    Simple function that adds fixed color depending on the class
-    """
-    color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
-    return tuple(color)
 
 
 class YOLO5:
@@ -145,29 +137,22 @@ class YOLO5:
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
-            gn = torch.tensor(image.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            # gn = torch.tensor(image.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if det is not None and len(det):
                 # Rescale boxes from img_size to image size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], image.shape).round()
 
+                # Write results
                 xywh_list = []
                 confidence_list = []
-
-                # Write results
                 for *xyxy, conf, cls in reversed(det):
-                    xywh_list.append(bbox_rel(img_w, img_h, *xyxy))
+                    xywh_list.append(bbox_rel(*xyxy))
                     confidence_list.append([conf.item()])
 
-                    # xyxy = [xy.item() for xy in xyxy]  # tensor列表转为一般列表
-                    # xywh = [xyxy[0] / img_w, xyxy[1] / img_h,
-                    #         (xyxy[2] - xyxy[0]) / img_w, (xyxy[3] - xyxy[1]) / img_h]  # 转相对于宽高的坐标
-                    # objects.append({'class': self.names[int(cls)], 'color': self.colors[int(cls)],
-                    #                 'confidence': conf.item(), 'x': xywh[0], 'y': xywh[1], 'w': xywh[2], 'h': xywh[3]})
-
-                # print('识别到:', len(xywh_list))
                 xywhs = torch.Tensor(xywh_list)
                 confss = torch.Tensor(confidence_list)
 
+                print('识别到:', len(xywh_list))
                 # Pass detections to deepsort
                 outputs = self.deepsort.update(xywhs, confss, image)
                 # 归一化
@@ -181,7 +166,7 @@ class YOLO5:
                         h = (obj[3] - obj[1]) / img_h
                         objs.append([x, y, w, h, obj[-1]])
 
-                # print('跟踪到:', len(objs))
+                print('跟踪到:', len(objs))
                 # 转字典
                 for i, obj in enumerate(objs):
                     objects.append({'x': obj[0], 'y': obj[1], 'w': obj[2], 'h': obj[3], 'id': obj[-1]})

@@ -31,7 +31,7 @@ class DeepSort(object):
 
         # detections = [Detection(bbox_tlwh[i], conf, features[i]) for i, conf in enumerate(confidences) if conf > self.min_confidence]
         detections = [Detection(bbox_tlwh[i], conf, features[i]) for i, conf in enumerate(confidences)]
-        print('detections:', len(detections))
+        # print('detections:', len(detections))
 
         # run on non-maximum supression
         boxes = np.array([d.tlwh for d in detections])
@@ -55,7 +55,7 @@ class DeepSort(object):
             outputs.append(np.array([x1, y1, x2, y2, track_id], dtype=np.int))
         if len(outputs) > 0:
             outputs = np.stack(outputs, axis=0)
-        print('outputs:', len(outputs))
+        # print('outputs:', len(outputs))
         return outputs
 
     """
