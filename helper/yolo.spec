@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['../main.py'],
-             pathex=['C:\\Users\\winwain\\Documents\\GitHub\\YOLOv5-Qt'],
+             pathex=[],
              binaries=[('../venv/Lib/site-packages/torchvision', 'torchvision')],
              datas=[('../img','img')],
              hiddenimports=['models.yolo'],
@@ -25,7 +25,7 @@ exe = EXE(pyz,
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
-          upx=True,
+          upx=False,
           console=True,
           icon='../img/yologo64.ico')
 coll = COLLECT(exe,
