@@ -5,9 +5,9 @@ block_cipher = None
 
 a = Analysis(['../main.py'],
              pathex=[],
-             binaries=[('../venv/Lib/site-packages/torchvision', 'torchvision')],
+             binaries=[],
              datas=[('../img','img')],
-             hiddenimports=['models.yolo'],
+             hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
