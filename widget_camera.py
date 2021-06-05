@@ -11,7 +11,7 @@ import time
 
 import cv2
 from PySide2.QtCore import QRect, QTimer
-from PySide2.QtGui import QPainter, QColor, Qt, QPixmap, QImage, QFont, QBrush, QPen
+from PySide2.QtGui import QPainter, QColor, Qt, QPixmap, QImage, QFont, QBrush, QPen, QStaticText
 from PySide2.QtWidgets import QWidget
 
 import msg_box
@@ -196,12 +196,12 @@ class WidgetCamera(QWidget):
             font = QFont()
             font.setFamily('Microsoft YaHei')
             if self.fps > 0:
-                font.setPointSize(14)
+                font.setPointSize(12)
                 qp.setFont(font)
                 pen = QPen()
                 pen.setColor(Qt.white)
                 qp.setPen(pen)
-                qp.drawText(sw - px - 130, py + 40, 'FPS: ' + str(round(self.fps, 2)))
+                qp.drawStaticText(px + 10, py + 10, QStaticText('FPS: ' + str(round(self.fps, 2))))
 
             # 画目标框
             pen = QPen()
