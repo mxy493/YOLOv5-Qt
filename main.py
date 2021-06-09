@@ -27,10 +27,11 @@ class MainWindow(QMainWindow):
         self.settings = SettingsDialog()
 
         # 模型加载线程
-        self.load_model_thread = threading.Thread(target=self.reload_yolo)
+        self.load_model_thread = threading.Thread(target=self.load_yolo)
         self.load_model_thread.start()
 
         self.config.btn_settings.clicked.connect(self.settings.exec)
+        self.settings.accepted.connect(self.reload)
 
         self.btn_camera = QPushButton('Open/Close Camera')  # 开启或关闭摄像头
         self.btn_camera.clicked.connect(self.oc_camera)
@@ -88,9 +89,9 @@ class MainWindow(QMainWindow):
                     self.load_model_thread.join()
                 self.camera.start_detect()  # 目标检测
 
-    def reload_yolo(self):
+    def load_yolo(self):
         """重新加载YOLO模型"""
-        print('加载YOLO模型')
+        print(f'[{threading.get_native_id()}] 加载YOLO模型: {self.settings.line_weights.text()}')
         ret = True
         # 目标检测
         check = self.camera.yolo.set_config(
@@ -110,8 +111,12 @@ class MainWindow(QMainWindow):
             msg.exec()
             ret = False
         self.camera.yolo.load_model()
-        print('模型加载结束')
+        print(f'[{threading.get_native_id()}] 模型加载结束')
         return ret
+
+    def reload(self):
+        self.load_model_thread = threading.Thread(target=self.load_yolo)
+        self.load_model_thread.start()
 
     def resizeEvent(self, event):
         self.update()
