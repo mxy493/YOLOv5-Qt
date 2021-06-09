@@ -1,4 +1,5 @@
 import sys
+import threading
 
 from PySide2.QtCore import QSize
 from PySide2.QtGui import (Qt, QIcon)
@@ -24,6 +25,10 @@ class MainWindow(QMainWindow):
         self.camera = WidgetCamera()  # 摄像头
         self.config = WidgetConfig()  # Yolo配置界面
         self.settings = SettingsDialog()
+
+        # 模型加载线程
+        self.load_model_thread = threading.Thread(target=self.reload_yolo)
+        self.load_model_thread.start()
 
         self.config.btn_settings.clicked.connect(self.settings.exec)
 
@@ -79,11 +84,14 @@ class MainWindow(QMainWindow):
                 self.camera.show_camera(fps=fps)  # 显示画面
                 if self.config.check_record.isChecked():
                     self.camera.run_video_recorder()  # 录制视频
-                if self.reload_yolo():
-                    self.camera.start_detect()  # 目标检测
+                if self.load_model_thread.is_alive():
+                    self.load_model_thread.join()
+                self.camera.start_detect()  # 目标检测
 
     def reload_yolo(self):
         """重新加载YOLO模型"""
+        print('加载YOLO模型')
+        ret = True
         # 目标检测
         check = self.camera.yolo.set_config(
             weights=self.settings.line_weights.text(),
@@ -100,9 +108,10 @@ class MainWindow(QMainWindow):
             msg = msg_box.MsgWarning()
             msg.setText('配置信息有误，无法正常加载YOLO模型！')
             msg.exec()
-            return False
+            ret = False
         self.camera.yolo.load_model()
-        return True
+        print('模型加载结束')
+        return ret
 
     def resizeEvent(self, event):
         self.update()
