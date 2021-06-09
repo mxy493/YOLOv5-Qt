@@ -202,6 +202,7 @@ class WidgetConfig(QGroupBox):
             'conf_thresh': round(self.spin_conf.value(), 1),
             'iou_thresh': round(self.spin_iou.value(), 1),
             'agnostic': self.check_agnostic.isChecked(),
-            'augment': self.check_augment.isChecked()
+            'augment': self.check_augment.isChecked(),
+            'half': self.check_half.isChecked()
         }
         GLOBAL.record_config(config)
