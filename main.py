@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         check = self.camera.yolo.set_config(
             weights=self.config.line_weights.text(),
             device=self.config.line_device.text(),
-            img_size=self.config.combo_size.currentData(),
+            img_size=int(self.config.combo_size.currentText()),
             conf=round(self.config.spin_conf.value(), 1),
             iou=round(self.config.spin_iou.value(), 1),
             agnostic=self.config.check_agnostic.isChecked(),

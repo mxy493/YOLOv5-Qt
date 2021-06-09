@@ -17,6 +17,7 @@ class YOLO5:
         self.device = None
         self.names = []
         self.colors = []
+        self.stride = 32
 
     def set_config(self, weights, device='cpu', img_size=448, conf=0.4, iou=0.5,
                    agnostic=True, augment=True, half=True) -> bool:
@@ -39,8 +40,8 @@ class YOLO5:
         if not check_device:
             return False
 
-        # img_size是否32的整数倍
-        if img_size % 32 != 0:
+        # img_size是否64的整数倍
+        if img_size % 64 != 0:
             return False
 
         if conf <= 0 or conf >= 1:
@@ -67,15 +68,24 @@ class YOLO5:
         # Initialize
         set_logging()
         self.device = select_device(self.opt['device'])
+        half = self.opt.get('half') and self.device.type != 'cpu'  # half precision only supported on CUDA
 
         # Load model
         self.model = attempt_load(self.opt['weights'], map_location=self.device)  # load FP32 model
-        self.opt['img_size'] = check_img_size(
-            self.opt['img_size'], s=self.model.stride.max())  # check img_size
+        self.stride = int(self.model.stride.max())  # model stride
+        imgsz = self.opt['img_size']
+        self.opt['img_size'] = check_img_size(imgsz, s=self.stride)  # check img_size
 
         # Get names and colors
         self.names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
         self.colors = [[np.random.randint(0, 255) for _ in range(3)] for _ in range(len(self.names))]
+        if half:
+            self.model.half()  # to FP16
+
+        # Run inference
+        if self.device.type != 'cpu':
+            self.model(torch.zeros(1, 3, imgsz, imgsz).to(self.device).type_as(next(self.model.parameters())))  # run once
+
         return True
 
     def obj_detect(self, image):
@@ -83,7 +93,7 @@ class YOLO5:
         img_h, img_w, _ = image.shape
 
         # Padded resize
-        img = letterbox(image, new_shape=self.opt['img_size'])[0]
+        img = letterbox(image, new_shape=self.opt['img_size'], stride=self.stride)[0]
 
         # Convert
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
@@ -91,7 +101,7 @@ class YOLO5:
 
         # Run inference
         img = torch.from_numpy(img).to(self.device)
-        img = img.float()  # uint8 to fp16/32
+        img = img.half() if self.opt.get('half') else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         if img.ndimension() == 3:
             img = img.unsqueeze(0)  # 添加一维

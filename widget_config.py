@@ -90,14 +90,14 @@ class WidgetConfig(QGroupBox):
             'QAbstractItemView::item {height: 40px;}')
         self.combo_size.setView(QListView())
         self.combo_size.addItem('320', 320)
-        self.combo_size.addItem('416', 416)
-        self.combo_size.addItem('480', 480)
-        self.combo_size.addItem('544', 544)
+        self.combo_size.addItem('384', 384)
+        self.combo_size.addItem('448', 448)
+        self.combo_size.addItem('512', 512)
+        self.combo_size.addItem('576', 576)
         self.combo_size.addItem('640', 640)
-        self.combo_size.setCurrentIndex(
-            self.combo_size.findData(GLOBAL.config.get('img_size', 480)))
+        self.combo_size.setCurrentText(GLOBAL.config.get('img_size', '640'))
         self.combo_size.currentIndexChanged.connect(lambda: GLOBAL.record_config(
-            {'img_size': self.combo_size.currentData()}))
+            {'img_size': self.combo_size.currentText()}))
 
         grid.addWidget(label_size, 4, 0)
         grid.addWidget(self.combo_size, 4, 1, 1, 2)
@@ -198,7 +198,7 @@ class WidgetConfig(QGroupBox):
             'video': self.line_video.text(),
             'weights': self.line_weights.text(),
             'device': self.line_device.text(),
-            'img_size': self.combo_size.currentData(),
+            'img_size': self.combo_size.currentText(),
             'conf_thresh': round(self.spin_conf.value(), 1),
             'iou_thresh': round(self.spin_iou.value(), 1),
             'agnostic': self.check_agnostic.isChecked(),
