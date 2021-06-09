@@ -70,6 +70,7 @@ class WidgetConfig(QGroupBox):
         # 是否使用GPU
         label_device = QLabel('CUDA device')
         self.line_device = QLineEdit('cpu')
+        self.line_device.setToolTip('cuda device, i.e. 0 or 0,1,2,3 or cpu')
         self.line_device.setText(GLOBAL.config.get('device', 'cpu'))
         self.line_device.setPlaceholderText('cpu or 0 or 0,1,2,3')
         self.line_device.setFixedHeight(HEIGHT)
@@ -83,6 +84,7 @@ class WidgetConfig(QGroupBox):
         # 设置图像大小
         label_size = QLabel('Img Size')
         self.combo_size = QComboBox()
+        self.combo_size.setToolTip('inference size (pixels)')
         self.combo_size.setFixedHeight(HEIGHT)
         self.combo_size.setStyleSheet(
             'QAbstractItemView::item {height: 40px;}')
@@ -103,6 +105,7 @@ class WidgetConfig(QGroupBox):
         # 设置置信度阈值
         label_conf = QLabel('Confidence')
         self.spin_conf = QDoubleSpinBox()
+        self.spin_conf.setToolTip('object confidence threshold')
         self.spin_conf.setFixedHeight(HEIGHT)
         self.spin_conf.setDecimals(1)
         self.spin_conf.setRange(0.1, 0.9)
@@ -118,6 +121,7 @@ class WidgetConfig(QGroupBox):
         # 设置IOU阈值
         label_iou = QLabel('IOU')
         self.spin_iou = QDoubleSpinBox()
+        self.spin_iou.setToolTip('IOU threshold for NMS')
         self.spin_iou.setFixedHeight(HEIGHT)
         self.spin_iou.setDecimals(1)
         self.spin_iou.setRange(0.1, 0.9)
@@ -132,6 +136,7 @@ class WidgetConfig(QGroupBox):
 
         # class-agnostic NMS
         self.check_agnostic = QCheckBox('Agnostic')
+        self.check_agnostic.setToolTip('class-agnostic NMS')
         self.check_agnostic.setChecked(GLOBAL.config.get('agnostic', True))
         self.check_agnostic.stateChanged.connect(lambda: GLOBAL.record_config(
             {'agnostic': self.check_agnostic.isChecked()}
@@ -141,6 +146,7 @@ class WidgetConfig(QGroupBox):
 
         # augmented inference
         self.check_augment = QCheckBox('Augment')
+        self.check_augment.setToolTip('augmented inference')
         self.check_augment.setChecked(GLOBAL.config.get('augment', True))
         self.check_augment.stateChanged.connect(lambda: GLOBAL.record_config(
             {'augment': self.check_augment.isChecked()}
@@ -148,9 +154,14 @@ class WidgetConfig(QGroupBox):
 
         grid.addWidget(self.check_augment, 8, 0, 1, 3)  # 一行三列
 
+        # half
+        self.check_half = QCheckBox('Half')
+        self.check_half.setToolTip('use FP16 half-precision inference')
+        grid.addWidget(self.check_half, 9, 0, 1, 3)  # 一行三列
+
         # 视频录制
         self.check_record = QCheckBox('Record video')
-        grid.addWidget(self.check_record, 9, 0, 1, 3)  # 一行三列
+        grid.addWidget(self.check_record, 10, 0, 1, 3)  # 一行三列
 
         self.setLayout(grid)  # 设置布局
 

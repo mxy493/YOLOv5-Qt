@@ -18,8 +18,8 @@ class YOLO5:
         self.names = []
         self.colors = []
 
-    def set_config(self, weights, device='cpu', img_size=480, conf=0.4, iou=0.5,
-                   agnostic=True, augment=True) -> bool:
+    def set_config(self, weights, device='cpu', img_size=448, conf=0.4, iou=0.5,
+                   agnostic=True, augment=True, half=True) -> bool:
         """检查参数的正确性并设置参数，参数改变后需要重新设置"""
         # 判断weights文件是否以'pt'结尾且真实存在
         if not os.path.exists(weights) or '.pt' not in weights:
@@ -57,7 +57,8 @@ class YOLO5:
             'conf_thresh': conf,
             'iou_thresh': iou,
             'agnostic_nms': agnostic,
-            'augment': augment
+            'augment': augment,
+            'half': half
         }
         return True
 

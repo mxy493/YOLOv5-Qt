@@ -85,7 +85,8 @@ class MainWindow(QMainWindow):
             conf=round(self.config.spin_conf.value(), 1),
             iou=round(self.config.spin_iou.value(), 1),
             agnostic=self.config.check_agnostic.isChecked(),
-            augment=self.config.check_augment.isChecked()
+            augment=self.config.check_augment.isChecked(),
+            half=self.config.check_half.isChecked()
         )
         if not check:
             msg = msg_box.MsgWarning()
