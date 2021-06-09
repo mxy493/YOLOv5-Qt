@@ -8,6 +8,7 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout, QHBoxLayou
 import msg_box
 from gb import GLOBAL
 from info import APP_NAME, APP_VERSION
+from settings_dialog import SettingsDialog
 from widget_camera import WidgetCamera
 from widget_config import WidgetConfig
 
@@ -22,19 +23,26 @@ class MainWindow(QMainWindow):
 
         self.camera = WidgetCamera()  # 摄像头
         self.config = WidgetConfig()  # Yolo配置界面
+        self.settings = SettingsDialog()
 
-        self.btn_camera = QPushButton('开启/关闭摄像头')  # 开启或关闭摄像头
+        self.config.btn_settings.clicked.connect(self.settings.exec)
+
+        self.btn_camera = QPushButton('Open/Close Camera')  # 开启或关闭摄像头
+        self.btn_camera.clicked.connect(self.oc_camera)
         self.btn_camera.setFixedHeight(60)
         vbox1 = QVBoxLayout()
+        vbox1.setContentsMargins(0, 0, 0, 0)
         vbox1.addWidget(self.config)
         vbox1.addStretch()
         vbox1.addWidget(self.btn_camera)
 
-        self.btn_camera.clicked.connect(self.oc_camera)
+        right_widget = QWidget()
+        right_widget.setMaximumWidth(400)
+        right_widget.setLayout(vbox1)
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.camera, 3)
-        hbox.addLayout(vbox1, 1)
+        hbox.addWidget(right_widget, 1)
 
         vbox = QVBoxLayout()
         vbox.addLayout(hbox)
@@ -77,22 +85,21 @@ class MainWindow(QMainWindow):
     def reload_yolo(self):
         """重新加载YOLO模型"""
         # 目标检测
-        self.config.save_config()
         check = self.camera.yolo.set_config(
-            weights=self.config.line_weights.text(),
-            device=self.config.line_device.text(),
-            img_size=int(self.config.combo_size.currentText()),
-            conf=round(self.config.spin_conf.value(), 1),
-            iou=round(self.config.spin_iou.value(), 1),
-            agnostic=self.config.check_agnostic.isChecked(),
-            augment=self.config.check_augment.isChecked(),
-            half=self.config.check_half.isChecked()
+            weights=self.settings.line_weights.text(),
+            device=self.settings.line_device.text(),
+            img_size=int(self.settings.combo_size.currentText()),
+            conf=round(self.settings.spin_conf.value(), 1),
+            iou=round(self.settings.spin_iou.value(), 1),
+            agnostic=self.settings.check_agnostic.isChecked(),
+            augment=self.settings.check_augment.isChecked(),
+            half=self.settings.check_half.isChecked()
         )
         if not check:
+            self.camera.stop_detect()  # 关闭摄像头
             msg = msg_box.MsgWarning()
             msg.setText('配置信息有误，无法正常加载YOLO模型！')
             msg.exec()
-            self.camera.stop_detect()  # 关闭摄像头
             return False
         self.camera.yolo.load_model()
         return True
