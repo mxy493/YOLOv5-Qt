@@ -38,6 +38,7 @@ class MainWindow(QMainWindow):
         self.settings.accepted.connect(self.reload)
 
         self.btn_camera = QPushButton('Open/Close Camera')  # 开启或关闭摄像头
+        self.btn_camera.setEnabled(False)
         self.btn_camera.clicked.connect(self.oc_camera)
         self.btn_camera.setFixedHeight(60)
         vbox1 = QVBoxLayout()
@@ -110,7 +111,10 @@ class MainWindow(QMainWindow):
         )
         if check:
             self.camera.yolo.load_model()
+            self.btn_camera.setEnabled(True)
         else:
+            YOLOGGER.warning('配置有误，放弃加载模型')
+            self.btn_camera.setEnabled(False)
             self.camera.stop_detect()  # 关闭摄像头
             self.signal_config_error.emit()
             ret = False
