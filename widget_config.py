@@ -10,7 +10,7 @@ Desc: 配置界面
 from PySide2.QtWidgets import (QGroupBox, QGridLayout, QCheckBox, QLabel, QLineEdit, QPushButton, QFileDialog, QWidget,
                                QVBoxLayout)
 
-from gb import GLOBAL
+import gb
 
 
 class WidgetConfig(QWidget):
@@ -23,18 +23,18 @@ class WidgetConfig(QWidget):
 
         # 使用默认摄像头复选框
         self.check_camera = QCheckBox('Use default camera')
-        self.check_camera.setChecked(GLOBAL.config.get('use_camera', True))
+        self.check_camera.setChecked(gb.get_config('use_camera', True))
         self.check_camera.stateChanged.connect(self.slot_check_camera)
         grid1.addWidget(self.check_camera, 0, 0, 1, 4)
 
         # 选择视频文件
         label_video = QLabel('Source')
         self.line_video = QLineEdit()
-        self.line_video.setText(GLOBAL.config.get('video', ''))
+        self.line_video.setText(gb.get_config('video', ''))
         self.line_video.setFixedHeight(HEIGHT)
         self.line_video.setEnabled(False)
         self.line_video.editingFinished.connect(
-            lambda: GLOBAL.record_config({'video': self.line_video.text()}))
+            lambda: gb.record_config({'video': self.line_video.text()}))
 
         self.btn_video = QPushButton('...')
         self.btn_video.setFixedWidth(40)
@@ -49,9 +49,9 @@ class WidgetConfig(QWidget):
 
         # 视频录制
         self.check_record = QCheckBox('Record video')
-        self.check_record.setChecked(GLOBAL.config.get('record', True))
+        self.check_record.setChecked(gb.get_config('record', True))
         self.check_record.stateChanged.connect(
-            lambda: GLOBAL.record_config({'record': self.check_record.isChecked()}))
+            lambda: gb.record_config({'record': self.check_record.isChecked()}))
         grid1.addWidget(self.check_record, 2, 0, 1, 4)
 
         # Settings
@@ -69,7 +69,7 @@ class WidgetConfig(QWidget):
 
     def slot_check_camera(self):
         check = self.check_camera.isChecked()
-        GLOBAL.record_config({'use_camera': check})  # 保存配置
+        gb.record_config({'use_camera': check})  # 保存配置
         if check:
             self.line_video.setEnabled(False)
             self.btn_video.setEnabled(False)
@@ -83,4 +83,4 @@ class WidgetConfig(QWidget):
                                            "Video Files (*)")
         if file[0] != '':
             self.line_video.setText(file[0])
-            GLOBAL.record_config({'video': file[0]})
+            gb.record_config({'video': file[0]})

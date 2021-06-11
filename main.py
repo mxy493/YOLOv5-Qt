@@ -7,7 +7,8 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout, QHBoxLayou
                                QWidget, QApplication, QDesktopWidget, QStyle)
 
 import msg_box
-from gb import GLOBAL
+import gb
+from gb import YOLOGGER
 from info import APP_NAME, APP_VERSION
 from settings_dialog import SettingsDialog
 from widget_camera import WidgetCamera
@@ -22,7 +23,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f'{APP_NAME} {APP_VERSION}')
         self.setWindowIcon(QIcon('img/yologo.png'))
 
-        GLOBAL.init_config()
+        gb.init_config()
+        gb.init_logger()
 
         self.signal_config_error.connect(self.slot_config_error)
 

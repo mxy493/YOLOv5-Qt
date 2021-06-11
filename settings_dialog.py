@@ -11,7 +11,7 @@ from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import (QDialog, QGridLayout, QCheckBox, QLabel, QLineEdit, QPushButton, QGroupBox, QComboBox,
                                QListView, QDoubleSpinBox, QVBoxLayout, QHBoxLayout, QFileDialog)
 
-from gb import GLOBAL
+import gb
 
 
 class SettingsDialog(QDialog):
@@ -135,14 +135,14 @@ class SettingsDialog(QDialog):
             self.line_weights.setText(file[0])
 
     def load_settings(self):
-        self.line_weights.setText(GLOBAL.config.get('weights', ''))
-        self.line_device.setText(GLOBAL.config.get('device', 'cpu'))
-        self.combo_size.setCurrentText(GLOBAL.config.get('img_size', '640'))
-        self.spin_conf.setValue(GLOBAL.config.get('conf_thresh', 0.5))
-        self.spin_iou.setValue(GLOBAL.config.get('iou_thresh', 0.5))
-        self.check_agnostic.setChecked(GLOBAL.config.get('agnostic', True))
-        self.check_augment.setChecked(GLOBAL.config.get('augment', True))
-        self.check_half.setChecked(GLOBAL.config.get('half', True))
+        self.line_weights.setText(gb.get_config('weights', ''))
+        self.line_device.setText(gb.get_config('device', 'cpu'))
+        self.combo_size.setCurrentText(gb.get_config('img_size', '640'))
+        self.spin_conf.setValue(gb.get_config('conf_thresh', 0.5))
+        self.spin_iou.setValue(gb.get_config('iou_thresh', 0.5))
+        self.check_agnostic.setChecked(gb.get_config('agnostic', True))
+        self.check_augment.setChecked(gb.get_config('augment', True))
+        self.check_half.setChecked(gb.get_config('half', True))
 
     def save_settings(self):
         """更新配置"""
@@ -156,7 +156,7 @@ class SettingsDialog(QDialog):
             'augment': self.check_augment.isChecked(),
             'half': self.check_half.isChecked()
         }
-        GLOBAL.record_config(config)
+        gb.record_config(config)
         self.accept()
 
     def restore(self):

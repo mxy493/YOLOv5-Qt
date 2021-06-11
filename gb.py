@@ -5,6 +5,9 @@ import threading
 
 import msg_box
 
+CONFIG = dict()
+YOLOGGER = logging.getLogger('yologger')
+
 
 def thread_runner(func):
     """多线程"""
@@ -25,32 +28,38 @@ class Global:
         # @iou_thresh: IOU阈值（0.1-0.9）
         self.config = dict()
 
-    def init_config(self):
-        if not os.path.exists('config'):
-            os.mkdir('config')  # make new config folder
-            return
-        try:
-            with open('config/config.json', 'r') as file_settings:
-                GLOBAL.config = json.loads(file_settings.read())
-        except FileNotFoundError as err_file:
-            print('配置文件不存在: ' + str(err_file))
 
-    def record_config(self, _dict):
-        """将设置参数写入到本地文件保存，传入字典"""
-        # 更新配置
-        for k, v in _dict.items():
-            self.config[k] = v
-        if not os.path.exists('config'):
-            os.mkdir('config')  # 创建config文件夹
-        try:
-            # 写入文件
-            with open('config/config.json', 'w') as file_config:
-                file_config.write(json.dumps(self.config, indent=4))
-        except FileNotFoundError as err_file:
-            print(err_file)
-            msg = msg_box.MsgWarning()
-            msg.setText('参数保存失败！')
-            msg.exec()
+def init_config():
+    global CONFIG
+    if not os.path.exists('config'):
+        os.mkdir('config')  # make new config folder
+        return
+    try:
+        with open('config/config.json', 'r') as file_settings:
+            CONFIG = json.loads(file_settings.read())
+    except FileNotFoundError as err_file:
+        print('配置文件不存在: ' + str(err_file))
 
 
-GLOBAL = Global()  # 全局变量调用该对象
+def record_config(_dict):
+    """将设置参数写入到本地文件保存，传入字典"""
+    global CONFIG
+    # 更新配置
+    for k, v in _dict.items():
+        CONFIG[k] = v
+    if not os.path.exists('config'):
+        os.mkdir('config')  # 创建config文件夹
+    try:
+        # 写入文件
+        with open('config/config.json', 'w') as file_config:
+            file_config.write(json.dumps(CONFIG, indent=4))
+    except FileNotFoundError as err_file:
+        print(err_file)
+        msg = msg_box.MsgWarning()
+        msg.setText('参数保存失败！')
+        msg.exec()
+
+
+def get_config(key, _default=None):
+    global CONFIG
+    return CONFIG.get(key, _default)
