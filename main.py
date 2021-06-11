@@ -80,7 +80,6 @@ class MainWindow(QMainWindow):
         self.show()  # 显示窗口
 
     def oc_camera(self):
-        YOLOGGER.info('开启/关闭摄像头')
         if self.camera.cap.isOpened():
             self.camera.close_camera()  # 关闭摄像头
             self.camera.stop_video_recorder()  # 关闭写入器
@@ -116,13 +115,13 @@ class MainWindow(QMainWindow):
         if check:
             self.camera.yolo.load_model()
             self.btn_camera.setEnabled(True)
+            YOLOGGER.info('模型已成功加载')
         else:
             YOLOGGER.warning('配置有误，放弃加载模型')
             self.btn_camera.setEnabled(False)
             self.camera.stop_detect()  # 关闭摄像头
             self.signal_config_error.emit(msg)
             ret = False
-        YOLOGGER.info('模型加载结束')
         return ret
 
     def reload(self):

@@ -107,10 +107,7 @@ class YOLO5:
             img = img.unsqueeze(0)  # 添加一维
 
         # Inference
-        t1 = time_synchronized()
         pred = self.model(img, augment=self.opt['augment'])[0]
-        t2 = time_synchronized()
-        print('Time:', t2 - t1)
 
         # Apply NMS
         pred = non_max_suppression(pred, self.opt['conf_thresh'], self.opt['iou_thresh'],

@@ -1,15 +1,15 @@
 # coding=utf-8
+import datetime
 import json
+import logging
 import os
 import sys
 import threading
-import datetime
-import logging
 
 import msg_box
 
 CONFIG = dict()
-YOLOGGER = logging.getLogger('yologger')
+YOLOGGER = logging.getLogger()
 
 
 def thread_runner(func):
@@ -43,9 +43,9 @@ def init_logger():
 
     formatter = logging.Formatter(fmt='[%(asctime)s] [%(thread)d] %(message)s')
 
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
-    YOLOGGER.addHandler(console_handler)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
+    YOLOGGER.addHandler(stream_handler)
 
     file_handler = logging.FileHandler(filename=f'log/{datetime.date.today().isoformat()}.log')
     file_handler.setFormatter(formatter)
