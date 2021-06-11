@@ -20,35 +20,32 @@ class YOLO5:
         self.stride = 32
 
     def set_config(self, weights, device='cpu', img_size=448, conf=0.4, iou=0.5,
-                   agnostic=True, augment=True, half=True) -> bool:
+                   agnostic=True, augment=True, half=True) -> (bool, str):
         """检查参数的正确性并设置参数，参数改变后需要重新设置"""
         # 判断weights文件是否以'pt'结尾且真实存在
         if not os.path.exists(weights) or '.pt' not in weights:
-            return False
+            return False, '找不到配置文件！'
 
         # 判断device设置是否正确
-        check_device = True
-        if device in ['cpu', '0', '1', '2', '3']:
-            check_device = True
-        elif re.match(r'[0-3],[0-3](,[0-3])?(,[0-3])?', device):
-            for c in ['0', '1', '2', '3']:
-                if device.count(c) > 1:
-                    check_device = False
-                    break
-        else:
-            check_device = False
-        if not check_device:
-            return False
+        if re.match(r'^[0-3](,[0-3]){0,3}$', device):
+            if not torch.cuda.is_available():
+                return False, 'CUDA当前无法使用！请将CUDA device设置为"cpu"！'
+            else:
+                for c in ['0', '1', '2', '3']:
+                    if device.count(c) > 1:
+                        return False, 'CUDA device 配置错误！'
+        elif device != 'cpu':
+            return False, 'CUDA device 配置错误！'
 
         # img_size是否64的整数倍
         if img_size % 64 != 0:
-            return False
+            return False, 'Image Size应为64的倍数！'
 
         if conf <= 0 or conf >= 1:
-            return False
+            return False, '置信度阈值应处于(0, 1)之间！'
 
         if iou <= 0 or iou >= 1:
-            return False
+            return False, 'IOU阈值应处于(0, 1)之间！'
 
         # 初始化配置
         self.opt = {
@@ -61,7 +58,7 @@ class YOLO5:
             'augment': augment,
             'half': half
         }
-        return True
+        return True, ''
 
     def load_model(self):
         """加载模型，参数改变后需要重新加载模型"""

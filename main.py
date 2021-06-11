@@ -16,7 +16,7 @@ from widget_config import WidgetConfig
 
 
 class MainWindow(QMainWindow):
-    signal_config_error = Signal()
+    signal_config_error = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -27,11 +27,11 @@ class MainWindow(QMainWindow):
         gb.clean_log()
         gb.init_config()
 
-        self.signal_config_error.connect(self.slot_config_error)
-
         self.camera = WidgetCamera()  # 摄像头
         self.config = WidgetConfig()  # Yolo配置界面
         self.settings = SettingsDialog()
+
+        self.signal_config_error.connect(self.slot_msg_dialog)
 
         # 模型加载线程
         self.load_model_thread = threading.Thread(target=self.load_yolo)
@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
         YOLOGGER.info(f'加载YOLO模型: {self.settings.line_weights.text()}')
         ret = True
         # 目标检测
-        check = self.camera.yolo.set_config(
+        check, msg = self.camera.yolo.set_config(
             weights=self.settings.line_weights.text(),
             device=self.settings.line_device.text(),
             img_size=int(self.settings.combo_size.currentText()),
@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
             YOLOGGER.warning('配置有误，放弃加载模型')
             self.btn_camera.setEnabled(False)
             self.camera.stop_detect()  # 关闭摄像头
-            self.signal_config_error.emit()
+            self.signal_config_error.emit(msg)
             ret = False
         YOLOGGER.info('模型加载结束')
         return ret
@@ -129,9 +129,9 @@ class MainWindow(QMainWindow):
         self.load_model_thread = threading.Thread(target=self.load_yolo)
         self.load_model_thread.start()
 
-    def slot_config_error(self):
+    def slot_msg_dialog(self, text):
         msg = msg_box.MsgWarning()
-        msg.setText('配置信息有误，无法正常加载YOLO模型！')
+        msg.setText(text)
         msg.exec()
 
     def resizeEvent(self, event):
