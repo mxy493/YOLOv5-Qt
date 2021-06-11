@@ -42,10 +42,13 @@ class YOLO5:
             return False, 'Image Size应为64的倍数！'
 
         if conf <= 0 or conf >= 1:
-            return False, '置信度阈值应处于(0, 1)之间！'
+            return False, 'Confidence阈值应处于(0, 1)之间！'
 
         if iou <= 0 or iou >= 1:
             return False, 'IOU阈值应处于(0, 1)之间！'
+
+        if half and device == 'cpu':
+            return False, '当前CUDA device配置为"cpu"，Half不可用！'
 
         # 初始化配置
         self.opt = {
