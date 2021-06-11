@@ -23,8 +23,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f'{APP_NAME} {APP_VERSION}')
         self.setWindowIcon(QIcon('img/yologo.png'))
 
-        gb.init_config()
         gb.init_logger()
+        gb.clean_log()
+        gb.init_config()
 
         self.signal_config_error.connect(self.slot_config_error)
 

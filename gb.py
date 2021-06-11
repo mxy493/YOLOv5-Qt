@@ -21,6 +21,21 @@ def thread_runner(func):
     return wrapper
 
 
+def clean_log():
+    YOLOGGER.info('开始清理日志文件')
+    if os.path.exists('log'):
+        file_list = os.listdir('log')
+        today = datetime.date.today()
+        for file in file_list:
+            date = file.split('.')[0].split('-')
+            log_date = datetime.date(int(date[0]), int(date[1]), int(date[2]))
+            interval = today - log_date
+            if abs(interval.days) > 30:
+                path = 'log/' + file
+                os.remove(path)
+                YOLOGGER.info(f'删除过期日志: {path}')
+
+
 def init_logger():
     if not os.path.exists('log'):
         os.mkdir('log')
