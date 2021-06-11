@@ -15,7 +15,7 @@ from widget_config import WidgetConfig
 
 
 class MainWindow(QMainWindow):
-    signal_config_error = Signal()  # 无参的信号
+    signal_config_error = Signal()
 
     def __init__(self):
         super().__init__()
