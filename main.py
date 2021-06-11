@@ -1,7 +1,7 @@
 import sys
 import threading
 
-from PySide2.QtCore import QSize
+from PySide2.QtCore import QSize, Signal
 from PySide2.QtGui import (Qt, QIcon)
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout,
                                QWidget, QApplication, QDesktopWidget, QStyle)
@@ -15,12 +15,16 @@ from widget_config import WidgetConfig
 
 
 class MainWindow(QMainWindow):
+    signal_config_error = Signal()  # 无参的信号
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle(f'{APP_NAME} {APP_VERSION}')
         self.setWindowIcon(QIcon('img/yologo.png'))
 
         GLOBAL.init_config()
+
+        self.signal_config_error.connect(self.slot_config_error)
 
         self.camera = WidgetCamera()  # 摄像头
         self.config = WidgetConfig()  # Yolo配置界面
@@ -104,19 +108,23 @@ class MainWindow(QMainWindow):
             augment=self.settings.check_augment.isChecked(),
             half=self.settings.check_half.isChecked()
         )
-        if not check:
+        if check:
+            self.camera.yolo.load_model()
+        else:
             self.camera.stop_detect()  # 关闭摄像头
-            msg = msg_box.MsgWarning()
-            msg.setText('配置信息有误，无法正常加载YOLO模型！')
-            msg.exec()
+            self.signal_config_error.emit()
             ret = False
-        self.camera.yolo.load_model()
         print(f'[{threading.get_native_id()}] 模型加载结束')
         return ret
 
     def reload(self):
         self.load_model_thread = threading.Thread(target=self.load_yolo)
         self.load_model_thread.start()
+
+    def slot_config_error(self):
+        msg = msg_box.MsgWarning()
+        msg.setText('配置信息有误，无法正常加载YOLO模型！')
+        msg.exec()
 
     def resizeEvent(self, event):
         self.update()
