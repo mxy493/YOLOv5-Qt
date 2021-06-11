@@ -1,7 +1,10 @@
 # coding=utf-8
 import json
 import os
+import sys
 import threading
+import datetime
+import logging
 
 import msg_box
 
@@ -18,15 +21,20 @@ def thread_runner(func):
     return wrapper
 
 
-class Global:
-    def __init__(self):
-        # 保存的配置
-        # @video: 视频文件
-        # @weights: 权重文件
-        # @img_size: 图像大小，32的倍数（320|416|480|640）
-        # @conf_thresh: 置信度阈值（0.1-0.9）
-        # @iou_thresh: IOU阈值（0.1-0.9）
-        self.config = dict()
+def init_logger():
+    if not os.path.exists('log'):
+        os.mkdir('log')
+    YOLOGGER.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter(fmt='[%(asctime)s] [%(thread)d] %(message)s')
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    YOLOGGER.addHandler(console_handler)
+
+    file_handler = logging.FileHandler(filename=f'log/{datetime.date.today().isoformat()}.log')
+    file_handler.setFormatter(formatter)
+    YOLOGGER.addHandler(file_handler)
 
 
 def init_config():

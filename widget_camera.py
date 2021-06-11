@@ -15,7 +15,7 @@ from PySide2.QtGui import QPainter, QColor, Qt, QPixmap, QImage, QFont, QBrush, 
 from PySide2.QtWidgets import QWidget
 
 import msg_box
-from gb import thread_runner
+from gb import thread_runner, YOLOGGER
 from yolo import YOLO5
 
 
@@ -41,6 +41,7 @@ class WidgetCamera(QWidget):
 
     def open_camera(self, use_camera, video):
         """打开摄像头，成功打开返回True"""
+        YOLOGGER.info('开启摄像头')
         cam = 0  # 默认摄像头
         if not use_camera:
             cam = video  # 视频流文件
@@ -56,6 +57,7 @@ class WidgetCamera(QWidget):
             return False
 
     def close_camera(self):
+        YOLOGGER.info('关闭摄像头')
         self.opened = False  # 先关闭目标检测线程再关闭摄像头
         self.stop_detect()  # 停止目标检测线程
         time.sleep(0.1)  # 等待读取完最后一帧画面，读取一帧画面0.1s以内，一般0.02~0.03s
@@ -65,7 +67,7 @@ class WidgetCamera(QWidget):
     @thread_runner
     def show_camera(self, fps=0):
         """传入参数帧率，摄像头使用默认值0，视频一般取30|60"""
-        print('显示画面线程开始')
+        YOLOGGER.info('显示画面线程开始')
         wait = 1 / fps if fps else 0
         while self.opened:
             self.read_image()  # 0.1s以内，一般0.02~0.03s
@@ -73,7 +75,7 @@ class WidgetCamera(QWidget):
                 time.sleep(wait)  # 等待wait秒读取一帧画面并显示
             self.update()
         self.update()
-        print('显示画面线程结束')
+        YOLOGGER.info('显示画面线程结束')
 
     def read_image(self):
         ret, image = self.cap.read()
@@ -86,7 +88,7 @@ class WidgetCamera(QWidget):
     @thread_runner
     def run_video_recorder(self, fps=30):
         """运行视频写入器"""
-        print('视频录制线程开始')
+        YOLOGGER.info('视频录制线程开始')
         now = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
         # 确保输出文件夹存在
         path = 'output'
@@ -98,7 +100,7 @@ class WidgetCamera(QWidget):
             time.sleep(0.01)
             # 避免由于没有画面导致线程无法退出
             if time.time() - t0 > 3:
-                print('超时未获取到帧, 视频录制失败!')
+                YOLOGGER.warning('超时未获取到帧, 视频录制失败!')
                 break
 
         # 有画面了，可以开始写入
@@ -115,7 +117,7 @@ class WidgetCamera(QWidget):
             while self.opened:
                 self.writer.write(self.image)  # 写入一帧画面，大概耗时1~2ms
                 time.sleep(wait)
-        print('视频录制线程结束')
+        YOLOGGER.info('视频录制线程结束')
 
     def stop_video_recorder(self):
         """停止视频录制线程"""
@@ -132,8 +134,8 @@ class WidgetCamera(QWidget):
     @thread_runner
     def start_detect(self):
         # 初始化yolo参数
+        YOLOGGER.info('目标检测线程开始')
         self.detecting = True
-        print('目标检测线程开始')
         while self.detecting:
             if self.image is None:
                 continue
@@ -144,7 +146,7 @@ class WidgetCamera(QWidget):
             self.fps = 1 / (t1 - t0)
             self.update()
         self.update()
-        print('目标检测线程结束')
+        YOLOGGER.info('目标检测线程结束')
 
     def stop_detect(self):
         """停止目标检测"""
