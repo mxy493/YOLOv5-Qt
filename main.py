@@ -4,7 +4,7 @@ import threading
 from PySide2.QtCore import QSize, Signal
 from PySide2.QtGui import (Qt, QIcon)
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout,
-                               QWidget, QApplication, QDesktopWidget, QStyle)
+                               QWidget, QApplication, QDesktopWidget, QStyle, QLabel)
 
 import msg_box
 import gb
@@ -40,14 +40,23 @@ class MainWindow(QMainWindow):
         self.config.btn_settings.clicked.connect(self.settings.exec)
         self.settings.accepted.connect(self.reload)
 
+        self.status_icon = QLabel()
+        self.status_text = QLabel()
+        self.update_status('Loading model...', False)
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.status_icon)
+        hbox.addWidget(self.status_text)
+
         self.btn_camera = QPushButton('Open/Close Camera')  # 开启或关闭摄像头
         self.btn_camera.setEnabled(False)
         self.btn_camera.clicked.connect(self.oc_camera)
         self.btn_camera.setFixedHeight(60)
+
         vbox1 = QVBoxLayout()
         vbox1.setContentsMargins(0, 0, 0, 0)
         vbox1.addWidget(self.config)
         vbox1.addStretch()
+        vbox1.addLayout(hbox)
         vbox1.addWidget(self.btn_camera)
 
         right_widget = QWidget()
@@ -114,10 +123,12 @@ class MainWindow(QMainWindow):
         )
         if check:
             self.camera.yolo.load_model()
+            self.update_status('Model loaded.', True)
             self.btn_camera.setEnabled(True)
             YOLOGGER.info('模型已成功加载')
         else:
             YOLOGGER.warning('配置有误，放弃加载模型')
+            self.update_status('Model loading failed.', False)
             self.btn_camera.setEnabled(False)
             self.camera.stop_detect()  # 关闭摄像头
             self.signal_config_error.emit(msg)
@@ -125,6 +136,7 @@ class MainWindow(QMainWindow):
         return ret
 
     def reload(self):
+        self.update_status('Reloading model...', False)
         self.load_model_thread = threading.Thread(target=self.load_yolo)
         self.load_model_thread.start()
 
@@ -132,6 +144,26 @@ class MainWindow(QMainWindow):
         msg = msg_box.MsgWarning()
         msg.setText(text)
         msg.exec()
+
+    def update_status(self, text, ok=False):
+        sz = 15
+        min_width = f'min-width: {sz}px;'  # 最小宽度：size
+        min_height = f'min-height: {sz}px;'  # 最小高度：size
+        max_width = f'max-width: {sz}px;'  # 最小宽度：size
+        max_height = f'max-height: {sz}px;'  # 最小高度：size
+        # 再设置边界形状及边框
+        border_radius = f'border-radius: {sz / 2}px;'  # 边框是圆角，半径为size / 2
+        border = 'border:1px solid black;'  # 边框为1px黑色
+        # 最后设置背景颜色
+        background = "background-color:"
+        if ok:
+            background += "rgb(0,255,0)"
+        else:
+            background += "rgb(255,0,0)"
+        style = min_width + min_height + max_width + max_height + border_radius + border + background
+        self.status_icon.setStyleSheet(style)
+
+        self.status_text.setText(text)
 
     def resizeEvent(self, event):
         self.update()

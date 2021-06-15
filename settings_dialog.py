@@ -70,7 +70,7 @@ class SettingsDialog(QDialog):
         # 设置置信度阈值
         label_conf = QLabel('Confidence')
         self.spin_conf = QDoubleSpinBox()
-        self.spin_conf.setToolTip('object confidence threshold')
+        self.spin_conf.setToolTip('confidence threshold')
         self.spin_conf.setFixedHeight(HEIGHT)
         self.spin_conf.setDecimals(1)
         self.spin_conf.setRange(0.1, 0.9)
@@ -82,7 +82,7 @@ class SettingsDialog(QDialog):
         # 设置IOU阈值
         label_iou = QLabel('IOU')
         self.spin_iou = QDoubleSpinBox()
-        self.spin_iou.setToolTip('IOU threshold for NMS')
+        self.spin_iou.setToolTip('NMS IoU threshold')
         self.spin_iou.setFixedHeight(HEIGHT)
         self.spin_iou.setDecimals(1)
         self.spin_iou.setRange(0.1, 0.9)
