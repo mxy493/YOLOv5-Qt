@@ -78,12 +78,12 @@ class WidgetCamera(QWidget):
         YOLOGGER.info('显示画面线程结束')
 
     def read_image(self):
-        ret, image = self.cap.read()
+        ret, img = self.cap.read()
         if ret:
             # 删去最后一层
-            if image.shape[2] == 4:
-                image = image[:, :, :-1]
-            self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # image
+            if img.shape[2] == 4:
+                img = img[:, :, :-1]
+            self.image = img
 
     @thread_runner
     def run_video_recorder(self, fps=30):
@@ -190,7 +190,7 @@ class WidgetCamera(QWidget):
             self.scale = sw / iw if sw / iw < sh / ih else sh / ih  # 缩放比例
             px = round((sw - iw * self.scale) / 2)
             py = round((sh - ih * self.scale) / 2)
-            qimage = QImage(self.image.data, iw, ih, 3 * iw, QImage.Format_RGB888)  # 转QImage
+            qimage = QImage(self.image.data, iw, ih, 3 * iw, QImage.Format_BGR888)  # 转QImage
             qpixmap = QPixmap.fromImage(qimage.scaled(sw, sh, Qt.KeepAspectRatio))  # 转QPixmap
             pw, ph = qpixmap.width(), qpixmap.height()  # 缩放后的QPixmap大小
             qp.drawPixmap(px, py, qpixmap)
