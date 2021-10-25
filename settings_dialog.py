@@ -6,6 +6,8 @@ Email: mxy493@qq.com
 Date: 2021/6/9
 Desc: 
 """
+import os
+
 from PySide2.QtCore import Qt
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import (QDialog, QGridLayout, QCheckBox, QLabel, QLineEdit, QPushButton, QGroupBox, QComboBox,
@@ -129,7 +131,11 @@ class SettingsDialog(QDialog):
 
     def choose_weights_file(self):
         """从系统中选择权重文件"""
-        file = QFileDialog.getOpenFileName(self, "Pre-trained YOLOv5 Weights", "./",
+        weights_path = '.'
+        weights = gb.get_config('weights', '')
+        if os.path.exists(weights):
+            weights_path = os.path.dirname(weights)
+        file = QFileDialog.getOpenFileName(self, "Pre-trained YOLOv5 Weights", weights_path,
                                            "Weights Files (*.pt);;All Files (*)")
         if file[0] != '':
             self.line_weights.setText(file[0])
