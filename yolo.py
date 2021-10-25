@@ -24,7 +24,7 @@ class YOLO5:
         """检查参数的正确性并设置参数，参数改变后需要重新设置"""
         # 判断weights文件是否以'pt'结尾且真实存在
         if not os.path.exists(weights) or '.pt' not in weights:
-            return False, '找不到配置文件！'
+            return False, '找不到weights文件！'
 
         # 判断device设置是否正确
         if re.match(r'^[0-3](,[0-3]){0,3}$', device):
