@@ -3,10 +3,11 @@ import re
 
 import numpy as np
 import torch
+from pathlib import Path
 
 from models.experimental import attempt_load
 from utils.datasets import letterbox
-from utils.general import (check_img_size, non_max_suppression, scale_coords, set_logging)
+from utils.general import (check_img_size, non_max_suppression, scale_coords, set_logging, check_suffix)
 from utils.torch_utils import select_device
 
 
@@ -22,9 +23,14 @@ class YOLO5:
     def set_config(self, weights, device='cpu', img_size=448, conf=0.4, iou=0.5,
                    agnostic=True, augment=True, half=True) -> (bool, str):
         """检查参数的正确性并设置参数，参数改变后需要重新设置"""
-        # 判断weights文件是否以'pt'结尾且真实存在
-        if not os.path.exists(weights) or '.pt' not in weights:
-            return False, '找不到weights文件！'
+        # 判断weights文件是否真实存在
+        if not os.path.exists(weights):
+            return False, f'Weights文件不存在: {weights}'
+        # 判断文件名后缀是否合法
+        suffix = Path(weights).suffix.lower()
+        suffixes = ['.pt', '.onnx', '.tflite', '.pb', '']
+        if suffix not in suffixes:
+            return False, f'不合法的文件后缀: \n{weights}'
 
         # 判断device设置是否正确
         if re.match(r'^[0-3](,[0-3]){0,3}$', device):

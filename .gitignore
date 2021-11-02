@@ -1,3 +1,8 @@
+# Defined by me --------------------------------------------------------------------------------------------------------
+weights/*
+**/setup/
+*.whl
+
 # Repo-specific GitIgnore ----------------------------------------------------------------------------------------------
 *.jpg
 *.jpeg
@@ -54,7 +59,6 @@ yolov3-tiny.conv.15
 __pycache__/
 *.py[cod]
 *$py.class
-*.whl
 
 # C extensions
 *.so
@@ -231,4 +235,3 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
-**/setup/
