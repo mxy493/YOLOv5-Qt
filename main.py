@@ -1,5 +1,7 @@
 import sys
 import threading
+import platform
+import pkg_resources as pkg
 
 from PySide2.QtCore import QSize, Signal
 from PySide2.QtGui import (Qt, QIcon)
@@ -20,6 +22,17 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        # 检查python版本是否满足要求
+        minimum = '3.6.2'
+        current = platform.python_version()
+        current, minimum = (pkg.parse_version(x) for x in (current, minimum))
+        if current < minimum:
+            msg = msg_box.MsgWarning()
+            msg.setText(f'当前Python版本({current})过低，请升级到{minimum}以上！')
+            msg.exec()
+            sys.exit()
+
         self.setWindowTitle(f'{APP_NAME} {APP_VERSION}')
         self.setWindowIcon(QIcon('img/yologo.png'))
 
