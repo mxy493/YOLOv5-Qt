@@ -195,26 +195,18 @@ class WidgetCamera(QWidget):
             pw, ph = qpixmap.width(), qpixmap.height()  # 缩放后的QPixmap大小
             qp.drawPixmap(px, py, qpixmap)
 
+            # 画目标框
             font = QFont()
             font.setFamily('Microsoft YaHei')
-            if self.fps > 0:
-                font.setPointSize(12)
-                qp.setFont(font)
-                pen = QPen()
-                pen.setColor(Qt.white)
-                qp.setPen(pen)
-                qp.drawStaticText(px + 10, py + 10, QStaticText('FPS: ' + str(round(self.fps, 2))))
-
-            # 画目标框
+            font.setPointSize(10)
+            qp.setFont(font)
+            brush1 = QBrush(Qt.NoBrush)  # 内部不填充
+            qp.setBrush(brush1)
             pen = QPen()
             pen.setWidth(2)  # 边框宽度
             for obj in self.objects:
-                font.setPointSize(10)
-                qp.setFont(font)
                 rgb = [round(c) for c in obj['color']]
                 pen.setColor(QColor(rgb[0], rgb[1], rgb[2]))  # 边框颜色
-                brush1 = QBrush(Qt.NoBrush)  # 内部不填充
-                qp.setBrush(brush1)
                 qp.setPen(pen)
                 # 坐标 宽高
                 ox, oy = px + round(pw * obj['x']), py + round(ph * obj['y'])

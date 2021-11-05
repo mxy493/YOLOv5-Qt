@@ -1,6 +1,8 @@
 import sys
 import threading
 import platform
+import time
+
 import pkg_resources as pkg
 
 from PySide2.QtCore import QSize, Signal
@@ -10,10 +12,11 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout, QHBoxLayou
 
 import msg_box
 import gb
-from gb import YOLOGGER
+from gb import YOLOGGER, thread_runner
 from info import APP_NAME, APP_VERSION
 from settings_dialog import SettingsDialog
 from widget_camera import WidgetCamera
+from widget_info import WidgetInfo
 from widget_config import WidgetConfig
 
 
@@ -41,6 +44,7 @@ class MainWindow(QMainWindow):
         gb.init_config()
 
         self.camera = WidgetCamera()  # 摄像头
+        self.info = WidgetInfo()  # 信息面板
         self.config = WidgetConfig()  # Yolo配置界面
         self.settings = SettingsDialog()
 
@@ -67,6 +71,7 @@ class MainWindow(QMainWindow):
 
         vbox1 = QVBoxLayout()
         vbox1.setContentsMargins(0, 0, 0, 0)
+        vbox1.addWidget(self.info)
         vbox1.addWidget(self.config)
         vbox1.addStretch()
         vbox1.addLayout(hbox)
@@ -118,6 +123,7 @@ class MainWindow(QMainWindow):
                 if self.load_model_thread.is_alive():
                     self.load_model_thread.join()
                 self.camera.start_detect()  # 目标检测
+                self.update_info()
 
     def load_yolo(self):
         """重新加载YOLO模型"""
@@ -179,6 +185,15 @@ class MainWindow(QMainWindow):
         self.status_icon.setStyleSheet(style)
 
         self.status_text.setText(text)
+
+    @thread_runner
+    def update_info(self):
+        YOLOGGER.info('start update and print fps')
+        while self.camera.detecting:
+            self.info.update_fps(self.camera.fps)
+            time.sleep(0.2)
+        self.info.update_fps(self.camera.fps)
+        YOLOGGER.info('stop update and print fps')
 
     def resizeEvent(self, event):
         self.update()
