@@ -122,7 +122,6 @@ class MainWindow(QMainWindow):
     def load_yolo(self):
         """重新加载YOLO模型"""
         YOLOGGER.info(f'加载YOLO模型: {self.settings.line_weights.text()}')
-        ret = True
         # 目标检测
         check, msg = self.camera.yolo.set_config(
             weights=self.settings.line_weights.text(),
@@ -130,12 +129,15 @@ class MainWindow(QMainWindow):
             img_size=int(self.settings.combo_size.currentText()),
             conf=round(self.settings.spin_conf.value(), 1),
             iou=round(self.settings.spin_iou.value(), 1),
+            max_det=int(self.settings.spin_max_det.value()),
             agnostic=self.settings.check_agnostic.isChecked(),
             augment=self.settings.check_augment.isChecked(),
-            half=self.settings.check_half.isChecked()
+            half=self.settings.check_half.isChecked(),
+            dnn=self.settings.check_dnn.isChecked()
         )
         if check:
-            self.camera.yolo.load_model()
+            if not self.camera.yolo.load_model():
+                return False
             self.update_status('Model loaded.', True)
             self.btn_camera.setEnabled(True)
             YOLOGGER.info('模型已成功加载')
@@ -145,8 +147,8 @@ class MainWindow(QMainWindow):
             self.btn_camera.setEnabled(False)
             self.camera.stop_detect()  # 关闭摄像头
             self.signal_config_error.emit(msg)
-            ret = False
-        return ret
+            return False
+        return True
 
     def reload(self):
         self.update_status('Reloading model...', False)

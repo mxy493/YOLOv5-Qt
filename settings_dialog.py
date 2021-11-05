@@ -22,6 +22,7 @@ class SettingsDialog(QDialog):
         self.setWindowTitle('Settings')
         self.setWindowIcon(QIcon('img/yologo.png'))
         self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setMinimumWidth(600)
 
         HEIGHT = 30
 
@@ -93,6 +94,18 @@ class SettingsDialog(QDialog):
         grid.addWidget(label_iou, 6, 0)
         grid.addWidget(self.spin_iou, 6, 1, 1, 3)
 
+        # maximum detections per image
+        label_max_det = QLabel('maximum detections')
+        self.spin_max_det = QDoubleSpinBox()
+        self.spin_max_det.setToolTip('Maximum detections per image')
+        self.spin_max_det.setFixedHeight(HEIGHT)
+        self.spin_max_det.setDecimals(0)
+        self.spin_max_det.setRange(10, 1000)
+        self.spin_max_det.setSingleStep(10)
+
+        grid.addWidget(label_max_det, 7, 0)
+        grid.addWidget(self.spin_max_det, 7, 1, 1, 3)
+
         # class-agnostic NMS
         self.check_agnostic = QCheckBox('Agnostic')
         self.check_agnostic.setToolTip('class-agnostic NMS')
@@ -105,9 +118,15 @@ class SettingsDialog(QDialog):
         self.check_half = QCheckBox('Half')
         self.check_half.setToolTip('use FP16 half-precision inference')
 
-        grid.addWidget(self.check_agnostic, 7, 0)
-        grid.addWidget(self.check_augment, 7, 1)
-        grid.addWidget(self.check_half, 7, 2)
+        grid.addWidget(self.check_agnostic, 8, 0)
+        grid.addWidget(self.check_augment, 8, 1)
+        grid.addWidget(self.check_half, 8, 2)
+
+        # use OpenCV DNN for ONNX inference
+        self.check_dnn = QCheckBox('DNN')
+        self.check_dnn.setToolTip('Use OpenCV DNN for ONNX inference')
+
+        grid.addWidget(self.check_dnn, 9, 0)
 
         box = QGroupBox()
         box.setLayout(grid)
@@ -146,9 +165,11 @@ class SettingsDialog(QDialog):
         self.combo_size.setCurrentText(gb.get_config('img_size', '640'))
         self.spin_conf.setValue(gb.get_config('conf_thresh', 0.5))
         self.spin_iou.setValue(gb.get_config('iou_thresh', 0.5))
+        self.spin_max_det.setValue(gb.get_config('max_det', 50))
         self.check_agnostic.setChecked(gb.get_config('agnostic', True))
         self.check_augment.setChecked(gb.get_config('augment', True))
         self.check_half.setChecked(gb.get_config('half', True))
+        self.check_dnn.setChecked(gb.get_config('dnn', False))
 
     def save_settings(self):
         """更新配置"""
@@ -158,9 +179,11 @@ class SettingsDialog(QDialog):
             'img_size': self.combo_size.currentText(),
             'conf_thresh': round(self.spin_conf.value(), 1),
             'iou_thresh': round(self.spin_iou.value(), 1),
+            'max_det': int(self.spin_max_det.value()),
             'agnostic': self.check_agnostic.isChecked(),
             'augment': self.check_augment.isChecked(),
-            'half': self.check_half.isChecked()
+            'half': self.check_half.isChecked(),
+            'dnn': self.check_dnn.isChecked()
         }
         gb.record_config(config)
         self.accept()

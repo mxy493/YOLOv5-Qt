@@ -61,7 +61,7 @@ def init_config():
         with open('config/config.json', 'r') as file_settings:
             CONFIG = json.loads(file_settings.read())
     except FileNotFoundError as err_file:
-        print('配置文件不存在: ' + str(err_file))
+        YOLOGGER.error('配置文件不存在: ' + str(err_file))
 
 
 def record_config(_dict):
@@ -77,7 +77,7 @@ def record_config(_dict):
         with open('config/config.json', 'w') as file_config:
             file_config.write(json.dumps(CONFIG, indent=4))
     except FileNotFoundError as err_file:
-        print(err_file)
+        YOLOGGER.error(err_file)
         msg = msg_box.MsgWarning()
         msg.setText('参数保存失败！')
         msg.exec()
