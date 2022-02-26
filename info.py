@@ -9,5 +9,5 @@ Desc: 一些关于程序的信息
 
 APP_NAME = 'YOLOv5-Qt'
 APP_TITLE = 'YOLOv5 Object Detection'
-APP_VERSION = '1.4.0'
-RECENT_UPDATE = '2021-10-25'
+APP_VERSION = '1.5.0'
+RECENT_UPDATE = '2021-02-26'
